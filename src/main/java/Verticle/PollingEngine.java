@@ -59,10 +59,12 @@ public class PollingEngine extends AbstractVerticle
                                     {
                                         JsonNode outputFromPlugin = SpawnProcess.spwanProcess(response.result().body());
 
-                                        System.out.println("Output From Plugin "+outputFromPlugin);
+                                        System.out.println("Output From fping Plugin "+outputFromPlugin);
 
                                         eventBus.<JsonNode>request(Constants.SSH_POLLING_DATA,outputFromPlugin,result->
                                         {
+                                            System.out.println(outputFromPlugin);
+
                                             if(result.succeeded())
                                             {
                                                 System.out.println("Polling Data Dumped into the Database");
@@ -90,23 +92,34 @@ public class PollingEngine extends AbstractVerticle
                                 {
                                     vertx.executeBlocking(handlers->
                                     {
-                                        System.out.println("response.result().body()" +response.result().body());
 
-                                        HashMap<String,String> fpingPluginResult = SpawnProcess.fpingForAvailibility(response.result().body());
-
-                                        System.out.println("Output from fping plugin "+fpingPluginResult);
-
-                                        eventBus.<HashMap<String ,String>>request(Constants.AVAILABILITY_POLLING_DATA,fpingPluginResult,result->
+                                        try
                                         {
-                                            if(result.succeeded())
+                                            HashMap<String,String> fpingPluginResult = SpawnProcess.fpingForAvailibility(response.result().body());
+
+                                            System.out.println("Output from fping plugin "+fpingPluginResult);
+
+                                            eventBus.<HashMap<String ,String>>request(Constants.AVAILABILITY_POLLING_DATA,fpingPluginResult,result->
                                             {
-                                                System.out.println("Fping polling data sucessfully dumped into database");
-                                            }
-                                            else
-                                            {
-                                                System.out.println("Some error in dumping the fping polling data into Database");
-                                            }
-                                        });
+//                                            System.out.println(fpingPluginResult);
+
+                                                if(result.succeeded())
+                                                {
+                                                    System.out.println("Fping polling data successfully dumped into database");
+                                                }
+                                                else
+                                                {
+                                                    System.out.println(response.cause().getMessage());
+
+                                                    System.out.println("Some error in dumping the fping polling data into Database");
+                                                }
+                                            });
+
+                                        }
+                                        catch (Exception exception)
+                                        {
+                                            exception.printStackTrace();
+                                        }
                                     });
                                 }
                                 else

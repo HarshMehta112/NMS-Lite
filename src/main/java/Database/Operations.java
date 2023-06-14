@@ -116,6 +116,8 @@ public class Operations
 
         String query = "SELECT " + columns + " FROM " + tableName + whereClause;
 
+        System.out.println(query);
+
         try ( PreparedStatement statement = connection.prepareStatement(query) )
         {
             ResultSet resultSet = statement.executeQuery();

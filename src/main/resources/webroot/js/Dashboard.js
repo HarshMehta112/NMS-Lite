@@ -1,6 +1,6 @@
 $(document).ready(function() {
 
-    dashboardmain.onload();
+    setTimeout(dashboardmain.onload(),1000)
 });
 
 

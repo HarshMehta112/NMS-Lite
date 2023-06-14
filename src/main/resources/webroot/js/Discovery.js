@@ -120,6 +120,8 @@ var discoverymain = {
         };
         genericAjaxCall.ajaxpost(request);
 
+        location.reload()
+
     },
 
 
@@ -144,6 +146,8 @@ var discoverymain = {
 
         };
         genericAjaxCall.ajaxpost(request);
+
+        location.reload()
 
     }
 

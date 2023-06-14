@@ -167,6 +167,8 @@ public class DatabaseVerticle extends AbstractVerticle
                     {
                         ArrayList<String> list = fetchDataForAvailabilityPolling().result();
 
+                        System.out.println(list);
+
                         handler.reply(list);
                     }
                     else
@@ -361,7 +363,7 @@ public class DatabaseVerticle extends AbstractVerticle
             },false);
         });
 
-        vertx.setPeriodic(10000,handler->
+        vertx.setPeriodic(5000,handler->
         {
             Promise<List<JsonArray>> promise = Promise.promise();
 
@@ -405,8 +407,6 @@ public class DatabaseVerticle extends AbstractVerticle
                 map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS disk FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'disk.used.percentage' AND p.timestamp >= NOW() - INTERVAL '1000' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY disk DESC LIMIT 5;");
 
                 JsonArray top5MaxDisk =  new JsonArray(map);
-
-                System.out.println("Top 5 disk "+top5MaxDisk);
 
                 dashBoardData.add(top5MaxDisk);
 
@@ -680,30 +680,24 @@ public class DatabaseVerticle extends AbstractVerticle
 
         Connection connection = connectionPool.getConnection();
 
-        String query = "SELECT MONITOR_TABLE.DEVICEID, MONITOR_TABLE.IPADDRESS, MONITOR_TABLE.TYPE,MONITOR_TABLE.NAME, AVAILABILITY_TABLE.STATUS FROM MONITOR_TABLE INNER JOIN AVAILABILITY_TABLE ON MONITOR_TABLE.IPADDRESS = AVAILABILITY_TABLE.IPADDRESS ORDER BY AVAILABILITY_TABLE.TIMESTAMP DESC lIMIT (SELECT COUNT(IPADDRESS) FROM MONITOR_TABLE);";
-
-        try ( PreparedStatement statement = connection.prepareStatement(query) )
+        try
         {
-            ResultSet resultSet = statement.executeQuery();
+            Operations operations = new Operations(connection);
 
-            resultList = new ArrayList<>();
+            ArrayList<String> columns = new ArrayList<>();
 
-            ResultSetMetaData metaData = resultSet.getMetaData();
+            columns.add("DEVICEID");
 
-            int columnCount = metaData.getColumnCount();
+            columns.add("NAME");
 
-            while ( resultSet.next() )
-            {
-                Map< String, Object > row = new HashMap<>();
+            columns.add("IPADDRESS");
 
-                for ( int iterator = 1; iterator <= columnCount; iterator++ )
-                {
-                    row.put(metaData.getColumnName(iterator), resultSet.getObject(iterator));
-                }
-                resultList.add(row);
+            columns.add("TYPE");
 
-                System.out.println("row "+row);
-            }
+            columns.add("STATUS");
+
+            resultList = operations.selectwithWhere("MONITOR_TABLE",columns,"");
+
             promise.complete(resultList);
         }
         catch (Exception exception)
@@ -780,6 +774,9 @@ public class DatabaseVerticle extends AbstractVerticle
             columns.add("IPADDRESS");
 
             List<Map<String, Object>> selectResult = operations.selectwithWhere("MONITOR_TABLE",columns,"");
+
+
+            System.out.println(selectResult.size());
 
             for(int index=0;index<selectResult.size();index++)
             {
@@ -1025,6 +1022,10 @@ public class DatabaseVerticle extends AbstractVerticle
                 preparedStatement.addBatch();
             }
             preparedStatement.executeBatch();
+
+            PreparedStatement preparedStatement1 = connection.prepareStatement("UPDATE MONITOR_TABLE M SET M.STATUS=CASE WHEN M.IPADDRESS IN (SELECT DISTINCT IPADDRESS FROM AVAILABILITY_TABLE WHERE STATUS='Up' AND TIMESTAMP >= NOW()-INTERVAL '2' MINUTE) THEN 'Up' ELSE 'Down' END;");
+
+            preparedStatement1.executeUpdate();
 
             promise.complete(true);
         }

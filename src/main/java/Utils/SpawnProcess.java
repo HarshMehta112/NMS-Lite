@@ -58,7 +58,7 @@ public class SpawnProcess
 
         int packetLoss=0;
 
-        int avgLatency=0;
+        float avgLatency=0;
 
         while (true)
         {
@@ -69,10 +69,11 @@ public class SpawnProcess
 
                 packetLoss = Integer.parseInt(((line.split(":"))[1]).split("=")[1].split(",")[0].split("/")[2].split("%")[0]);
 
-                avgLatency = Integer.parseInt(((line.split(":"))[1]).split("=")[2].split("/")[2]);
+                avgLatency = Float.parseFloat(((line.split(":"))[1]).split("=")[2].split("/")[2]);
 
                 if(avgLatency==0 && packetLoss>50)
                 {
+                    System.out.println("Hi");
                     fpingResult.put(((line.split(":"))[0]).trim(),"Down");
                 }
                 else
@@ -86,6 +87,8 @@ public class SpawnProcess
             catch (Exception exception)
             {
                 avgLatency=0;
+
+                exception.printStackTrace();
             }
 
         }
