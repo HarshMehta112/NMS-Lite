@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible"
+        content="IE=edge">
+  <meta name="viewport"
+        content="width=device-width,
+				initial-scale=1.0">
+  <title>GeeksForGeeks</title>
+  <link rel="stylesheet" href="css/Responsive.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.10.14/css/jquery.dataTables.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.1/css/all.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://cdn.datatables.net/1.10.14/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <script src="//cdn.jsdelivr.net/sockjs/1.0.0/sockjs.min.js"></script>
+  <script src="https://unpkg.io/@vertx/eventbus-bridge-client.js@1.0.0-1/vertx-eventbus.js"></script>
+  <link rel="stylesheet" href="css/Dashboard.css">
+
+  <script src="js/Dashboard.js"></script>
+  <script src="js/GenericAjaxCall.js"></script>
+</head>
+
+<body>
+
+<!-- for header part -->
+<header>
+
+  <div class="logosec">
+    <div class="logo">LiteNMS</div>
+    <img src="https://media.geeksforgeeks.org/wp-content/uploads/20221210182541/Untitled-design-(30).png"
+         class="icn menuicn"
+         id="menuicn"
+         alt="menu-icon">
+  </div>
+
+</header>
+
+<div class="main-container">
+  <div class="navcontainer">
+    <nav class="nav">
+      <div class="nav-upper-options">
+        <div class="nav-option option1">
+          <img src="https://media.geeksforgeeks.org/wp-content/uploads/20221210182148/Untitled-design-(29).png"
+               class="nav-img"
+               alt="dashboard">
+          <h3>Dashboard</h3>
+
+        </div>
+
+        <div class="option2 nav-option">
+          <img src="https://media.geeksforgeeks.org/wp-content/uploads/20221210183322/9.png"
+               class="nav-img">
+          <a href="Monitor.html">Monitor</a>
+        </div>
+
+        <div class="nav-option option3">
+          <img src="https://media.geeksforgeeks.org/wp-content/uploads/20221210183320/5.png"
+               class="nav-img"
+               alt="report">
+          <a href="Discovery.html">Discovery</a>
+
+        </div>
+
+        <div class="nav-option logout">
+
+          <button onclick="dashboardmain.logout()"> <img src="https://media.geeksforgeeks.org/wp-content/uploads/20221210183321/7.png"
+                                                         class="nav-img"
+                                                         alt="logout">d</button>
+          <h3>Logout</h3>
+        </div>
+
+      </div>
+    </nav>
+  </div>
+  <div class="main">
+    <div class="box-container">
+
+      <div class="box box1">
+        <div class="text">
+          <h2 id="up" class="topic-heading">--</h2>
+          <h3 class="topic">Up</h3>
+        </div>
+      </div>
+
+      <div class="box box2">
+        <div class="text">
+          <h2 id="down" class="topic-heading">--</h2>
+          <h3 class="topic">Down</h3>
+        </div>
+      </div>
+
+      <div class="box box3">
+        <div class="text">
+          <h2 id="total" class="topic-heading">--</h2>
+          <h3 class="topic">Total</h3>
+        </div>
+      </div>
+
+    </div>
+
+      <div class="row">
+      <div class="container">
+        <h2>Top 5 max Disk(%)</h2>
+        <table id="disk">
+          <thead>
+          <tr>
+            <th>IP Address</th>
+            <th>Value</th>
+          </tr>
+          </thead>
+        </table>
+      </div>
+
+
+        <div class="container">
+          <h2>Top 5 max CPU(%)</h2>
+          <table id="cpu">
+            <thead>
+            <tr>
+              <th>IP Address</th>
+              <th>Value</th>
+            </tr>
+            </thead>
+          </table>
+        </div>
+
+        <div class="container">
+          <h2>Top 5 max Memory(%)</h2>
+          <table id="memory">
+            <thead>
+            <tr>
+              <th>IP Address</th>
+              <th>Value</th>
+            </tr>
+            </thead>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

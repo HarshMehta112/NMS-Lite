@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <link rel="stylesheet" href="css/loginstyle.css">
+</head>
+<body>
+<div id="bg"></div>
+<form action="/loginHandler" method="post">
+  <h1 style="align-content: center">Login</h1>
+  <div class="form-field">
+    <input name="username" id="username" type="text" placeholder="Username" required/>
+  </div>
+  <div class="form-field">
+    <input name="password" id="password" type="password" placeholder="Password" required/>
+  </div>
+  <div id="failure" class="alert" style="display:none;">
+    <strong>Failure! </strong> Wrong password or username.
+  </div>
+  <div class="form-field">
+    <input type="submit" class="btn" value="Login"  style="text-indent: 0px"/>
+  </div>
+
+</form>
+</body>
+</html>

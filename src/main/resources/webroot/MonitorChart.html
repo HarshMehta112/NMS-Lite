@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+
+<body>
+<style>
+  .wrapper {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: 200px;
+  }
+
+  #item1 {
+    grid-column: 1 / 3;
+    grid-row: 1 / 3;
+  }
+
+
+  #one {
+    color: #000;
+    background-color: blue;
+    margin: 10px;
+    padding: 20px;
+  }
+
+  #myChart2 {
+    margin: 10px;
+    padding: 50px;
+  }
+</style>
+
+<div class="wrapper">
+  <div id="item1">
+    <canvas id="myChart" style="width:100%;max-width:500px;height: 100%;max-height:500px;"></canvas>
+  </div>
+  <div id="one">
+    <h3>Packet loss : 0%</h3>
+  </div>
+  <div id="one">
+    <h3>RTT(ms) : 20</h3>
+  </div>
+  <div id="one">
+    <h3>Sent packet : 4</h3>
+  </div>
+  <div id="one">
+    <h3>Receive packet : 4</h3>
+  </div>
+</div>
+<div id="item2">
+  <canvas id="myChart2" style="width:100%;max-width:600px"></canvas>
+</div>
+
+
+
+<script>
+  var xValues = ["Up", "Down"];
+  var yValues = [4, 2];
+  var barColors = [
+    "blue", "orange"
+  ];
+
+  new Chart("myChart", {
+    type: "doughnut",
+    data: {
+      labels: xValues,
+      datasets: [{
+        backgroundColor: barColors,
+        data: yValues
+      }]
+    },
+    options: {
+      title: {
+        display: true,
+        text: "Monitor on for Last 24 Hours"
+      }
+    }
+  });
+
+  var xValues2 = ["10:35", "10:40", "10:45", "10:50", "10:55"];
+  var yValues2 = [55, 49, 44, 24, 15];
+  var barColors2 = ["red", "green", "blue", "orange", "brown"];
+
+  new Chart("myChart2", {
+    type: "bar",
+    data: {
+      labels: xValues2,
+      datasets: [{
+        backgroundColor: barColors2,
+        data: yValues2
+      }]
+    },
+    options: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: "Last 5 polling packet loss"
+      }
+    }
+  });
+</script>
+
+</body>
+
+</html>
