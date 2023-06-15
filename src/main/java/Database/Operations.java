@@ -1,5 +1,9 @@
 package Database;
 
+import Verticle.PublicAPIVerticle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.beans.PropertyEditorSupport;
 import java.sql.*;
 import java.util.*;
@@ -8,6 +12,7 @@ import java.util.*;
 public class Operations
 {
 
+    private static final Logger logger = LoggerFactory.getLogger(Operations.class);
     private Connection connection;
 
     // Constructor
@@ -21,7 +26,7 @@ public class Operations
     //insert operation
     // remove whereclause
     //try catch in every method
-    public int insert (String tableName, Map< String, Object > data, String whereClause)
+    public int insert (String tableName, Map< String, Object > data)
     {
 
         ArrayList< String > columnNames = new ArrayList<>(data.keySet());
@@ -106,45 +111,6 @@ public class Operations
             exception.printStackTrace();
         }
         return 0;
-    }
-
-    // Select operation
-    public List< Map< String, Object > > selectwithWhere (String tableName, ArrayList< String > columnNames,String whereClause)
-    {
-
-        String columns = String.join(",", columnNames);
-
-        String query = "SELECT " + columns + " FROM " + tableName + whereClause;
-
-        System.out.println(query);
-
-        try ( PreparedStatement statement = connection.prepareStatement(query) )
-        {
-            ResultSet resultSet = statement.executeQuery();
-
-            List< Map< String, Object > > resultList = new ArrayList<>();
-
-            ResultSetMetaData metaData = resultSet.getMetaData();
-
-            int columnCount = metaData.getColumnCount();
-
-            while ( resultSet.next() )
-            {
-                Map< String, Object > row = new HashMap<>();
-
-                for ( int iterator = 1; iterator <= columnCount; iterator++ )
-                {
-                    row.put(metaData.getColumnName(iterator), resultSet.getObject(iterator));
-                }
-                resultList.add(row);
-            }
-            return resultList;
-        }
-        catch (Exception exception)
-        {
-            exception.printStackTrace();
-        }
-        return null;
     }
 
     public List< Map< String, Object > > selectQuery (String query) throws SQLException

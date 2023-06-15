@@ -1,8 +1,12 @@
 package Utils;
 
+import Verticle.PublicAPIVerticle;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.json.JsonArray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 public class SpawnProcess
 {
+    private static final Logger logger = LoggerFactory.getLogger(SpawnProcess.class);
     public static HashMap<String, String > fpingForAvailibility(ArrayList<String> list) {
 
         ArrayList<String> command = new ArrayList<>();
@@ -71,16 +76,6 @@ public class SpawnProcess
 
                 avgLatency = Float.parseFloat(((line.split(":"))[1]).split("=")[2].split("/")[2]);
 
-                if(avgLatency==0 && packetLoss>50)
-                {
-                    System.out.println("Hi");
-                    fpingResult.put(((line.split(":"))[0]).trim(),"Down");
-                }
-                else
-                {
-                    fpingResult.put(((line.split(":"))[0]).trim(),"Up");
-                }
-
                 process.waitFor(60,TimeUnit.SECONDS);
 
             }
@@ -88,8 +83,17 @@ public class SpawnProcess
             {
                 avgLatency=0;
 
-                exception.printStackTrace();
             }
+            if(avgLatency==0 && packetLoss>50)
+            {
+                fpingResult.put(((line.split(":"))[0]).trim(),"Down");
+            }
+            else
+            {
+                fpingResult.put(((line.split(":"))[0]).trim(),"Up");
+            }
+
+
 
         }
 
@@ -103,15 +107,19 @@ public class SpawnProcess
     public static JsonNode spwanProcess(JsonArray credential) {
 
         String encoder = (Base64.getEncoder().encodeToString((credential).toString().getBytes(StandardCharsets.UTF_8)));
-        System.out.println(encoder);
-        BufferedReader reader = null;
 
-        Process process = null;
+        System.out.println(encoder);
+
+        BufferedReader reader;
+
+        Process process;
 
         JsonArray resultJsonarray = new JsonArray();
 
         JsonNode array = null;
-        try {
+
+        try
+        {
             ProcessBuilder builder = new ProcessBuilder(Constants.PLUGIN_PATH, encoder);
 
             process = builder.start();

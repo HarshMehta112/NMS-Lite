@@ -10,9 +10,12 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DiscoveryEngine extends AbstractVerticle
 {
+    private static final Logger logger = LoggerFactory.getLogger(DiscoveryEngine.class);
     EventBus eventBus;
 
     @Override
@@ -74,5 +77,6 @@ public class DiscoveryEngine extends AbstractVerticle
 
         });
 
+        startPromise.complete();
     }
 }

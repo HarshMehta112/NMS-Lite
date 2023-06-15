@@ -15,10 +15,15 @@ import io.vertx.ext.web.handler.sockjs.SockJSBridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 import Utils.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class PublicAPIVerticle extends AbstractVerticle
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(PublicAPIVerticle.class);
+
     EventBus eventBus;
 
     @Override
@@ -259,12 +264,10 @@ public class PublicAPIVerticle extends AbstractVerticle
                        if(ready.succeeded())
                        {
                            System.out.println("server started listening on port no 8080");
-
-                           startPromise.complete();
                        }
                        else
                        {
-                           startPromise.fail("some error occurred with server" + ready.cause().getMessage());
+                           System.out.println("some error occurred with server" + ready.cause().getMessage());
                        }
                    });
        }
@@ -272,6 +275,8 @@ public class PublicAPIVerticle extends AbstractVerticle
        {
            exception.printStackTrace();
        }
+
+       startPromise.complete();
 
     }
 }

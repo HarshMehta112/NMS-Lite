@@ -7,14 +7,18 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 public class PollingEngine extends AbstractVerticle
 {
+    private static final Logger logger = LoggerFactory.getLogger(PollingEngine.class);
     EventBus eventBus;
 
     @Override
@@ -28,12 +32,7 @@ public class PollingEngine extends AbstractVerticle
 
         scheduleTime.put("sshPolling",Constants.SSH_POLLING_TIME);
 
-        HashMap<String,Integer> updatedScheduleTime = new HashMap<>();
-
-        updatedScheduleTime.put("availabilityPolling", Constants.AVAILIBILITY_POLLING_TIME);
-
-        updatedScheduleTime.put("sshPolling",Constants.SSH_POLLING_TIME);
-
+        HashMap<String,Integer> updatedScheduleTime = new HashMap<>(scheduleTime);
 
         vertx.setPeriodic(Constants.SCHEDULER_DELAY,handler->
         {
@@ -43,11 +42,11 @@ public class PollingEngine extends AbstractVerticle
                 {
                     int time = entry.getValue();
 
-                    time = time-Constants.SCHEDULER_DELAY;
+                    time = time - Constants.SCHEDULER_DELAY;
 
                     if(time<=0)
                     {
-                        System.out.println(entry.getKey());
+                        logger.info("Polling Started .... "+entry.getKey());
 
                         if(entry.getKey().equals("sshPolling"))
                         {
@@ -59,26 +58,26 @@ public class PollingEngine extends AbstractVerticle
                                     {
                                         JsonNode outputFromPlugin = SpawnProcess.spwanProcess(response.result().body());
 
-                                        System.out.println("Output From fping Plugin "+outputFromPlugin);
+                                        logger.info("Output From SSH Plugin "+outputFromPlugin);
 
-                                        eventBus.<JsonNode>request(Constants.SSH_POLLING_DATA,outputFromPlugin,result->
+                                        eventBus.<JsonNode>request(Constants.OUTPUT_SSH_POLLING,outputFromPlugin,result->
                                         {
                                             System.out.println(outputFromPlugin);
 
                                             if(result.succeeded())
                                             {
-                                                System.out.println("Polling Data Dumped into the Database");
+                                                logger.info("Polling Data Dumped into the Database");
                                             }
                                             else
                                             {
-                                                System.out.println("Some error in dumping the ssh polling data into Database");
+                                                logger.info("Some error in dumping the ssh polling data into Database");
                                             }
                                         });
                                     });
                                 }
                                 else
                                 {
-                                    System.out.println("Some Problem in loading Discovery Devices");
+                                    logger.info("Some Problem in loading Discovery Devices");
                                 }
                             });
                         }
@@ -97,21 +96,17 @@ public class PollingEngine extends AbstractVerticle
                                         {
                                             HashMap<String,String> fpingPluginResult = SpawnProcess.fpingForAvailibility(response.result().body());
 
-                                            System.out.println("Output from fping plugin "+fpingPluginResult);
+                                            logger.info("Output from fping plugin "+fpingPluginResult);
 
-                                            eventBus.<HashMap<String ,String>>request(Constants.AVAILABILITY_POLLING_DATA,fpingPluginResult,result->
+                                            eventBus.<HashMap<String ,String>>request(Constants.OUTPUT_AVAILABILITY_POLLING,fpingPluginResult,result->
                                             {
-//                                            System.out.println(fpingPluginResult);
-
                                                 if(result.succeeded())
                                                 {
-                                                    System.out.println("Fping polling data successfully dumped into database");
+                                                    logger.info("Fping polling data successfully dumped into database");
                                                 }
                                                 else
                                                 {
-                                                    System.out.println(response.cause().getMessage());
-
-                                                    System.out.println("Some error in dumping the fping polling data into Database");
+                                                    logger.info("Some error in dumping the fping polling data into Database");
                                                 }
                                             });
 
@@ -124,7 +119,7 @@ public class PollingEngine extends AbstractVerticle
                                 }
                                 else
                                 {
-                                    System.out.println("Some error in loading monitor ip address");
+                                    logger.info("Some error in loading monitor ip address for polling");
                                 }
                             });
                         }
@@ -143,6 +138,7 @@ public class PollingEngine extends AbstractVerticle
             }
         });
 
+        startPromise.complete();
 
     }
 }

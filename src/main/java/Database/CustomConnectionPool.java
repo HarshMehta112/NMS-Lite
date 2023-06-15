@@ -20,7 +20,7 @@ public class CustomConnectionPool
 
     private static ArrayList< Connection > activeConnection = new ArrayList<>();
 
-    private final int INITIALPOLLSIZE = 5;
+    private final int INITIALPOLLSIZE = 6;
 
     private final int MAXPOOLSIZE = 10;
 

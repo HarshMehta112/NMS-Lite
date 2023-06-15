@@ -2,65 +2,62 @@ import Verticle.DatabaseVerticle;
 import Verticle.DiscoveryEngine;
 import Verticle.PollingEngine;
 import Verticle.PublicAPIVerticle;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BootStrap
 {
+    private static final Logger logger = LoggerFactory.getLogger(BootStrap.class);
+
     public static void main(String[] args)
     {
         Vertx vertx = Vertx.vertx();
 
-        //use stander declaration
-        vertx.deployVerticle(new DatabaseVerticle()).onComplete(deplyment->
+        vertx.deployVerticle(DatabaseVerticle.class.getName()).onComplete(deplyment->
         {
             if(deplyment.succeeded())
             {
-                System.out.println("Public API deployed Successfully");
+                logger.info("Database verticle deployed Successfully");
             }
             else
             {
-                System.out.println("Some error occurred "+deplyment.cause().getMessage());
+                logger.error("Some error occurred "+deplyment.cause().getMessage());
 
             }
-        });
-
-        vertx.deployVerticle(PublicAPIVerticle.class.getName()).onComplete(deplyment->
+        }).compose(result->vertx.deployVerticle(PublicAPIVerticle.class.getName()).onComplete(deplyment->
         {
             if(deplyment.succeeded())
             {
-                System.out.println("Public API deployed Successfully");
+                logger.info("Public API deployed Successfully");
             }
             else
             {
-                System.out.println("Some error occurred "+deplyment.cause().getMessage());
+                logger.error("Some error occurred "+deplyment.cause().getMessage());
             }
-        });
-
-        vertx.deployVerticle(DiscoveryEngine.class.getName(),new DeploymentOptions().setWorkerPoolSize(4)).onComplete(deplyment->
+        })).compose(result->vertx.deployVerticle(DiscoveryEngine.class.getName()).onComplete(deplyment->
         {
             if(deplyment.succeeded())
             {
-                System.out.println("Public API deployed Successfully");
+                logger.info("DiscoveryEngine deployed Successfully");
             }
             else
             {
-                System.out.println("Some error occurred "+deplyment.cause().getMessage());
+                logger.error("Some error occurred "+deplyment.cause().getMessage());
             }
-        });
-
+        })).compose(result-> vertx.deployVerticle(PollingEngine.class.getName()).onComplete(deplyment->
+        {
+            if(deplyment.succeeded())
+            {
+                logger.info("PollingEngine deployed Successfully");
+            }
+            else
+            {
+                logger.error("Some error occurred "+deplyment.cause().getMessage());
+            }
+        }));
         // why setWorkerPoolSize
-        vertx.deployVerticle(PollingEngine.class.getName(),new DeploymentOptions().setWorkerPoolSize(4)).onComplete(deplyment->
-        {
-            if(deplyment.succeeded())
-            {
-                System.out.println("Public API deployed Successfully");
-            }
-            else
-            {
-                System.out.println("Some error occurred "+deplyment.cause().getMessage());
-            }
-        });
+
 
     }
 }
