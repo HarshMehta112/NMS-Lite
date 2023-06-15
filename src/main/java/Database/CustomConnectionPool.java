@@ -1,5 +1,7 @@
 package Database;
 
+import Utils.UserConfig;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -20,9 +22,9 @@ public class CustomConnectionPool
 
     private static ArrayList< Connection > activeConnection = new ArrayList<>();
 
-    private final int INITIALPOLLSIZE = 6;
+    private final int INITIALPOLLSIZE = UserConfig.MIN_CONNECTION_POOL_SIZE;
 
-    private final int MAXPOOLSIZE = 10;
+    private final int MAXPOOLSIZE = UserConfig.MAX_CONNECTION_POOL_SIZE;
 
     private static int poolSize = 0;
 

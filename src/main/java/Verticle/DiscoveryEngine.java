@@ -29,16 +29,18 @@ public class DiscoveryEngine extends AbstractVerticle
 
             deviceDetails.put("category","discovery");
 
-            System.out.println("Device Details "+deviceDetails);
+            logger.info("Discovery Device Details "+deviceDetails);
 
             JsonArray inputArray = new JsonArray().add(deviceDetails);
 
-            System.out.println("Inpiut Array "+inputArray);
-
             try
             {
+                System.out.println("Before "+Thread.currentThread().getName());
+
                 vertx.executeBlocking(blockingHandler->
                 {
+                    System.out.println("AFter"+Thread.currentThread().getName());
+
                     JsonNode discoveryResultFromPlugin = SpawnProcess.spwanProcess(inputArray);
 
                     ObjectMapper mapper = new ObjectMapper();
@@ -59,8 +61,6 @@ public class DiscoveryEngine extends AbstractVerticle
                     if(jsonString.equals("\"success\""))
                     {
                         handler.reply(deviceDetails.getString("id"));
-
-                        System.out.println(deviceDetails.getString("id"));
                     }
                     else
                     {
@@ -68,6 +68,8 @@ public class DiscoveryEngine extends AbstractVerticle
                     }
 
                 },false);
+
+                System.out.println("__--__-----------------------------");
 
             }
             catch (Exception exception)

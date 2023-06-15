@@ -2,6 +2,7 @@ package Verticle;
 
 import Utils.Constants;
 import Utils.SpawnProcess;
+import Utils.UserConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -12,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,19 +22,19 @@ public class PollingEngine extends AbstractVerticle
     EventBus eventBus;
 
     @Override
-    public void start(Promise<Void> startPromise) throws Exception
+    public void start(Promise<Void> startPromise)
     {
         eventBus = vertx.eventBus();
 
         HashMap<String,Integer> scheduleTime = new HashMap<>();
 
-        scheduleTime.put("availabilityPolling", Constants.AVAILIBILITY_POLLING_TIME);
+        scheduleTime.put("availabilityPolling", UserConfig.AVAILIBILITY_POLLING_TIME);
 
-        scheduleTime.put("sshPolling",Constants.SSH_POLLING_TIME);
+        scheduleTime.put("sshPolling",UserConfig.SSH_POLLING_TIME);
 
         HashMap<String,Integer> updatedScheduleTime = new HashMap<>(scheduleTime);
 
-        vertx.setPeriodic(Constants.SCHEDULER_DELAY,handler->
+        vertx.setPeriodic(UserConfig.SCHEDULER_DELAY, handler->
         {
             try
             {
@@ -42,7 +42,7 @@ public class PollingEngine extends AbstractVerticle
                 {
                     int time = entry.getValue();
 
-                    time = time - Constants.SCHEDULER_DELAY;
+                    time = time - UserConfig.SCHEDULER_DELAY;
 
                     if(time<=0)
                     {
@@ -62,8 +62,6 @@ public class PollingEngine extends AbstractVerticle
 
                                         eventBus.<JsonNode>request(Constants.OUTPUT_SSH_POLLING,outputFromPlugin,result->
                                         {
-                                            System.out.println(outputFromPlugin);
-
                                             if(result.succeeded())
                                             {
                                                 logger.info("Polling Data Dumped into the Database");
@@ -106,7 +104,7 @@ public class PollingEngine extends AbstractVerticle
                                                 }
                                                 else
                                                 {
-                                                    logger.info("Some error in dumping the fping polling data into Database");
+                                                    logger.info(response.cause().getMessage()); //exception   chceck
                                                 }
                                             });
 
@@ -119,11 +117,10 @@ public class PollingEngine extends AbstractVerticle
                                 }
                                 else
                                 {
-                                    logger.info("Some error in loading monitor ip address for polling");
+                                    logger.info("Some error in loading monitor ip address");
                                 }
                             });
                         }
-
                         updatedScheduleTime.put(entry.getKey(),scheduleTime.get(entry.getKey()));
                     }
                     else

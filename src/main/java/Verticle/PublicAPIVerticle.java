@@ -60,13 +60,13 @@ public class PublicAPIVerticle extends AbstractVerticle
                    {
                        routingContext.response().setStatusCode(200).end("added");
 
-                       System.out.println("Discovery Device Added");
+                       logger.info("Discovery Device Added");
                    }
                    else
                    {
                        routingContext.response().end("Not Added");
 
-                       System.out.println("Discovery Device Not Added");
+                       logger.info("Discovery Device Not Added");
                    }
                 });
 
@@ -78,13 +78,14 @@ public class PublicAPIVerticle extends AbstractVerticle
                 {
                    if(response.succeeded())
                    {
-                       System.out.println("response from database verticle "+response.result().body());
+                       logger.info("response from database verticle "+response.result().body());
 
                        routingContext.response().setStatusCode(200).end(response.result().body().encodePrettily());
                    }
+                   //migrate into one method
                    else
                    {
-                       System.out.println("Some Problem in loading Monitor Devices");
+                       logger.info("Some Problem in loading Monitor Devices");
 
                        routingContext.response().end("Some Problem in loading Monitor Devices");
                    }
@@ -98,13 +99,11 @@ public class PublicAPIVerticle extends AbstractVerticle
                 {
                     if(response.succeeded())
                     {
-                        System.out.println(response.result().body());
-
                         routingContext.response().setStatusCode(200).end(response.result().body().encodePrettily());
                     }
                     else
                     {
-                        System.out.println("Some Problem in loading Discovery Devices");
+                        logger.info("Some Problem in loading Discovery Devices");
 
                         routingContext.response().end("Some Problem in loading Discovery Devices");
                     }
@@ -129,9 +128,7 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.route("/login/DeleteMonitorDevice").handler(routingContext ->
             {
-                System.out.println();
-
-                System.out.println("Delete Monitor Id "+routingContext.request().getParam("id"));
+                logger.info("Delete Monitor Id "+routingContext.request().getParam("id"));
 
                 eventBus.request(Constants.DELETE_MONITOR_DEVICE,routingContext.request().getParam("id"),response->
                 {
@@ -199,7 +196,7 @@ public class PublicAPIVerticle extends AbstractVerticle
                 {
                     if(response.succeeded())
                     {
-                        System.out.println("Response "+response.result().body().encodePrettily());
+                        logger.info("Response "+response.result().body().encodePrettily());
 
                         routingContext.response().end(response.result().body().toString());
                     }
@@ -214,21 +211,19 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.route("/login/Edit").handler(routingContext ->
             {
-                System.out.println(routingContext.body().asJsonObject());
-
                 eventBus.request(Constants.EDIT_DISCOVERY_DEVICE,routingContext.body().asJsonObject(),response->
                 {
                     if(response.succeeded())
                     {
                         routingContext.response().setStatusCode(200).end("Edited");
 
-                        System.out.println("Discovery Device Edited");
+                        logger.info("Discovery Device Edited");
                     }
                     else
                     {
                         routingContext.response().end("Not Edited");
 
-                        System.out.println("Discovery Device Not Edited");
+                        logger.info("Discovery Device Not Edited");
                     }
                 });
             });
@@ -263,11 +258,11 @@ public class PublicAPIVerticle extends AbstractVerticle
                    {
                        if(ready.succeeded())
                        {
-                           System.out.println("server started listening on port no 8080");
+                           logger.info("server started listening on port no 8080");
                        }
                        else
                        {
-                           System.out.println("some error occurred with server" + ready.cause().getMessage());
+                           logger.info("some error occurred with server" + ready.cause().getMessage());
                        }
                    });
        }

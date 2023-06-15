@@ -1,6 +1,7 @@
 package Verticle;
 
 import Utils.Constants;
+import Utils.UserConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.AbstractVerticle;
@@ -12,7 +13,6 @@ import io.vertx.core.json.JsonObject;
 import Database.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,7 +40,7 @@ public class DatabaseVerticle extends AbstractVerticle
 
     EventBus eventBus;
     @Override
-    public void start(Promise<Void> startPromise) throws Exception
+    public void start(Promise<Void> startPromise)
     {
 
         eventBus = vertx.eventBus();
@@ -78,7 +78,7 @@ public class DatabaseVerticle extends AbstractVerticle
                 {
                     eventBus.publish(Constants.DASHBOARD_DATA_EVENT_BUS_BRIDGE,handlers.result().toString());
 
-                    logger.info("Dashboard Data published :",handlers.result().toString());
+                    logger.info("Dashboard Data published :"+handlers.result().toString());
 
                 });
             });
@@ -178,15 +178,9 @@ public class DatabaseVerticle extends AbstractVerticle
             {
                 fetchDataForAvailabilityPolling().onComplete(arrayListAsyncResult ->
                 {
-                    System.out.println(fetchDataForAvailabilityPolling());
-
                     if(fetchDataForAvailabilityPolling().succeeded())
                     {
-                        ArrayList<String> list = fetchDataForAvailabilityPolling().result();
-
-                        System.out.println(list);
-
-                        handler.reply(list);
+                        handler.reply(fetchDataForAvailabilityPolling().result());
                     }
                     else
                     {
@@ -205,8 +199,6 @@ public class DatabaseVerticle extends AbstractVerticle
                 {
                     if(result.succeeded())
                     {
-                        System.out.println("availability Polling data dumped into database successfully");
-
                         logger.info("availability Polling data dumped into database successfully");
                     }
                     else
@@ -226,8 +218,6 @@ public class DatabaseVerticle extends AbstractVerticle
                 {
                     if(result.succeeded())
                     {
-                        System.out.println("ssh Polling data dumped into database successfully");
-
                         logger.info("ssh Polling data dumped into database successfully");
                     }
                     else
@@ -241,8 +231,6 @@ public class DatabaseVerticle extends AbstractVerticle
 
         eventBus.localConsumer(Constants.DELETE_DISCOVERY_DEVICE,handler->
         {
-            System.out.println(handler.body());
-
             vertx.executeBlocking(blockingHandler->
             {
                 DeleteDevice(handler.body().toString()).onComplete(result->
@@ -382,7 +370,7 @@ public class DatabaseVerticle extends AbstractVerticle
             },false);
         });
 
-        vertx.setPeriodic(Constants.DASHBOARD_REFRESH_DELAY,handler->
+        vertx.setPeriodic(UserConfig.DASHBOARD_REFRESH_DELAY, handler->
         {
             Promise<List<JsonArray>> promise = Promise.promise();
 
@@ -411,43 +399,46 @@ public class DatabaseVerticle extends AbstractVerticle
         {
             Connection connection = connectionPool.getConnection();
 
-            Operations operations = new Operations(connection);
-
             try
             {
-                String query = "SELECT m.ipaddress, MAX(p.METRICVALUE) AS memory FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'memory.used.percentage' AND p.timestamp >= NOW() - INTERVAL '1000' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY memory DESC LIMIT 5;";
+                if (!(connection.isClosed()))
+                {
+                    Operations operations = new Operations(connection);
 
-                List<Map<String,Object>> map = operations.selectQuery(query);
+                    String query = "SELECT m.ipaddress, MAX(p.METRICVALUE) AS memory FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'memory.used.percentage' AND p.timestamp >= NOW() - INTERVAL '1000' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY memory DESC LIMIT 5;";
 
-                JsonArray top5MaxMemory =  new JsonArray(map);
+                    List<Map<String, Object>> map = operations.selectQuery(query);
 
-                logger.info("Top 5 Memory "+top5MaxMemory);
+                    JsonArray top5MaxMemory = new JsonArray(map);
 
-                dashBoardData.add(top5MaxMemory);
+                    logger.info("Top 5 Memory " + top5MaxMemory);
 
-                map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS disk FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'disk.used.percentage' AND p.timestamp >= NOW() - INTERVAL '1000' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY disk DESC LIMIT 5;");
+                    dashBoardData.add(top5MaxMemory);
 
-                JsonArray top5MaxDisk =  new JsonArray(map);
+                    map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS disk FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'disk.used.percentage' AND p.timestamp >= NOW() - INTERVAL '1000' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY disk DESC LIMIT 5;");
 
-                logger.info("Top 5 Memory "+top5MaxDisk);
+                    JsonArray top5MaxDisk = new JsonArray(map);
 
-                dashBoardData.add(top5MaxDisk);
+                    logger.info("Top 5 Memory " + top5MaxDisk);
 
-                map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS cpu FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'cpu.user.percentage' AND p.timestamp >= NOW() - INTERVAL '1000' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY cpu DESC LIMIT 5;");
+                    dashBoardData.add(top5MaxDisk);
 
-                JsonArray top5MaxCPU =  new JsonArray(map);
+                    map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS cpu FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'cpu.user.percentage' AND p.timestamp >= NOW() - INTERVAL '1000' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY cpu DESC LIMIT 5;");
 
-                logger.info("Top 5 CPU "+top5MaxCPU);
+                    JsonArray top5MaxCPU = new JsonArray(map);
 
-                dashBoardData.add(top5MaxCPU);
+                    logger.info("Top 5 CPU " + top5MaxCPU);
 
-                map = operations.selectQuery("SELECT COUNT(CASE WHEN STATUS='Up' THEN 1 END) as UP,COUNT(CASE WHEN STATUS='Down' THEN 1 END) as DOWN FROM (SELECT MONITOR_TABLE.DEVICEID, MONITOR_TABLE.IPADDRESS, MONITOR_TABLE.TYPE,MONITOR_TABLE.NAME, AVAILABILITY_TABLE.STATUS FROM MONITOR_TABLE INNER JOIN AVAILABILITY_TABLE ON MONITOR_TABLE.IPADDRESS = AVAILABILITY_TABLE.IPADDRESS ORDER BY AVAILABILITY_TABLE.TIMESTAMP DESC lIMIT (SELECT COUNT(IPADDRESS) FROM MONITOR_TABLE))");
+                    dashBoardData.add(top5MaxCPU);
 
-                JsonArray status =  new JsonArray(map);
+                    map = operations.selectQuery("SELECT COUNT(CASE WHEN STATUS='Up' THEN 1 END) as UP,COUNT(CASE WHEN STATUS='Down' THEN 1 END) as DOWN FROM (SELECT MONITOR_TABLE.DEVICEID, MONITOR_TABLE.IPADDRESS, MONITOR_TABLE.TYPE,MONITOR_TABLE.NAME, AVAILABILITY_TABLE.STATUS FROM MONITOR_TABLE INNER JOIN AVAILABILITY_TABLE ON MONITOR_TABLE.IPADDRESS = AVAILABILITY_TABLE.IPADDRESS ORDER BY AVAILABILITY_TABLE.TIMESTAMP DESC lIMIT (SELECT COUNT(IPADDRESS) FROM MONITOR_TABLE))");
 
-                dashBoardData.add(status);
+                    JsonArray status = new JsonArray(map);
 
-                promise.complete(dashBoardData);
+                    dashBoardData.add(status);
+
+                    promise.complete(dashBoardData);
+                }
             }
             catch (Exception exception)
             {
@@ -459,6 +450,7 @@ public class DatabaseVerticle extends AbstractVerticle
             {
                 connectionPool.releaseConnection(connection);
             }
+
         });
 
     }
@@ -470,15 +462,18 @@ public class DatabaseVerticle extends AbstractVerticle
 
         Connection connection = connectionPool.getConnection();
 
-        Operations operations = new Operations(connection);
-
         try
         {
-            String whereClause = "DEVICEID = "+Integer.valueOf(deviceID);
+            if(!(connection.isClosed()))
+            {
+                Operations operations = new Operations(connection);
 
-            operations.delete("DISCOVERY_TABLE",whereClause);
+                String whereClause = "DEVICEID = " + Integer.valueOf(deviceID);
 
-            promise.complete(true);
+                operations.delete("DISCOVERY_TABLE",whereClause);
+
+                promise.complete(true);
+            }
         }
         catch (Exception exception)
         {
@@ -500,15 +495,19 @@ public class DatabaseVerticle extends AbstractVerticle
 
         Connection connection = connectionPool.getConnection();
 
-        Operations operations = new Operations(connection);
 
         try
         {
-            String whereClause = "DEVICEID = "+Integer.valueOf(deviceID);
+            if(!(connection.isClosed()))
+            {
+                Operations operations = new Operations(connection);
 
-            operations.delete("MONITOR_TABLE",whereClause);
+                String whereClause = "DEVICEID = " + Integer.valueOf(deviceID);
 
-            promise.complete(true);
+                operations.delete("MONITOR_TABLE",whereClause);
+
+                promise.complete(true);
+            }
         }
         catch (Exception exception)
         {
@@ -535,34 +534,37 @@ public class DatabaseVerticle extends AbstractVerticle
 
         try
         {
-            Operations operations = new Operations(connection);
-
-            List<Map<String, Object>> allData;
-
-            String query = "SELECT IPADDRESS,USERNAME,PASSWORD,TYPE,DEVICEID FROM MONITOR_TABLE ";
-
-            allData = operations.selectQuery(query);
-
-            logger.info("Data From Monitor Table for SSH Polling "+allData);
-
-            inputDataForSSHPolling = new JsonArray();
-
-            for(int index=0;index<allData.size();index++)
+            if(!(connection.isClosed()))
             {
-                inputDataForSSHPolling.add(allData.get(index));
+                Operations operations = new Operations(connection);
+
+                List<Map<String, Object>> allData;
+
+                String query = "SELECT IPADDRESS,USERNAME,PASSWORD,TYPE,DEVICEID FROM MONITOR_TABLE ";
+
+                allData = operations.selectQuery(query);
+
+                logger.info("Data From Monitor Table for SSH Polling "+allData);
+
+                inputDataForSSHPolling = new JsonArray();
+
+                for(int index=0;index<allData.size();index++)
+                {
+                    inputDataForSSHPolling.add(allData.get(index));
+                }
+
+                JsonObject jsonObject =  inputDataForSSHPolling.getJsonObject(0);
+
+                jsonObject.put("category","polling");
+
+                inputDataForSSHPolling.remove(0);
+
+                inputDataForSSHPolling.add(0,jsonObject);
+
+                logger.info("Input data for SSH polling "+inputDataForSSHPolling);
+
+                promise.complete(inputDataForSSHPolling);
             }
-
-            JsonObject jsonObject =  inputDataForSSHPolling.getJsonObject(0);
-
-            jsonObject.put("category","polling");
-
-            inputDataForSSHPolling.remove(0);
-
-            inputDataForSSHPolling.add(0,jsonObject);
-
-            logger.info("Input data for SSH polling "+inputDataForSSHPolling);
-
-            promise.complete(inputDataForSSHPolling);
         }
         catch (Exception exception)
         {
@@ -585,28 +587,31 @@ public class DatabaseVerticle extends AbstractVerticle
 
         try
         {
-            Operations operations = new Operations(connection);
+           if(!(connection.isClosed()))
+           {
+               Operations operations = new Operations(connection);
 
-            List<Map<String, Object>> allData;
+               List<Map<String, Object>> allData;
 
-            String query = "SELECT IPADDRESS,USERNAME,PASSWORD,NAME,TYPE FROM DISCOVERY_TABLE WHERE DEVICEID = "+Integer.valueOf(deviceID);
+               String query = "SELECT IPADDRESS,USERNAME,PASSWORD,NAME,TYPE FROM DISCOVERY_TABLE WHERE DEVICEID = "+Integer.valueOf(deviceID);
 
-            allData = operations.selectQuery(query);
+               allData = operations.selectQuery(query);
 
-            credentialData.put("username",allData.get(0).get("USERNAME"));
+               credentialData.put("username",allData.get(0).get("USERNAME"));
 
-            credentialData.put("password",allData.get(0).get("PASSWORD"));
+               credentialData.put("password",allData.get(0).get("PASSWORD"));
 
-            credentialData.put("ip",allData.get(0).get("IPADDRESS"));
+               credentialData.put("ip",allData.get(0).get("IPADDRESS"));
 
-            credentialData.put("type",allData.get(0).get("TYPE"));
+               credentialData.put("type",allData.get(0).get("TYPE"));
 
-            credentialData.put("id",Integer.valueOf(deviceID));
+               credentialData.put("id",Integer.valueOf(deviceID));
 
-            credentialData.put("name",allData.get(0).get("NAME"));
+               credentialData.put("name",allData.get(0).get("NAME"));
 
-            promise.complete(credentialData);
+               promise.complete(credentialData);
 
+           }
         }
         catch (Exception exception)
         {
@@ -634,33 +639,40 @@ public class DatabaseVerticle extends AbstractVerticle
 
         try ( PreparedStatement statement = connection.prepareStatement(query) )
         {
-            statement.setObject(1,Integer.parseInt(deviceId));
-
-            statement.setObject(2,Integer.parseInt(deviceId));
-
-            logger.info("Id from device info page "+Integer.parseInt(deviceId));
-
-            ResultSet resultSet = statement.executeQuery();
-
-            ResultSetMetaData metaData = resultSet.getMetaData();
-
-            int columnCount = metaData.getColumnCount();
-
-            while ( resultSet.next() )
+            if(!(connection.isClosed()))
             {
-                for ( int iterator = 1; iterator <= columnCount; iterator++ )
+                statement.setObject(1,Integer.parseInt(deviceId));
+
+                statement.setObject(2,Integer.parseInt(deviceId));
+
+                logger.info("Id from device info page "+Integer.parseInt(deviceId));
+
+                ResultSet resultSet = statement.executeQuery();
+
+                ResultSetMetaData metaData = resultSet.getMetaData();
+
+                int columnCount = metaData.getColumnCount();
+
+                while ( resultSet.next() )
                 {
-                    result.put(metaData.getColumnName(iterator), resultSet.getObject(iterator));
+                    for ( int iterator = 1; iterator <= columnCount; iterator++ )
+                    {
+                        result.put(metaData.getColumnName(iterator), resultSet.getObject(iterator));
+                    }
                 }
+                promise.complete(result);
             }
-            promise.complete(result);
         }
         catch (Exception exception)
         {
             exception.printStackTrace();
         }
+        finally
+        {
+            connectionPool.releaseConnection(connection);
+        }
 
-        System.out.println("Result form device info "+result);
+        logger.info("Result form device info "+result);
 
         return promise.future();
     }
@@ -677,13 +689,17 @@ public class DatabaseVerticle extends AbstractVerticle
 
         try
         {
-            Operations operations = new Operations(connection);
+            if(!(connection.isClosed()))
+            {
+                Operations operations = new Operations(connection);
 
-            String query = "SELECT DEVICEID,NAME,IPADDRESS,TYPE,STATUS FROM MONITOR_TABLE";
+                String query = "SELECT DEVICEID,NAME,IPADDRESS,TYPE,STATUS FROM MONITOR_TABLE";
 
-            resultList = operations.selectQuery(query);
+                resultList = operations.selectQuery(query);
 
-            promise.complete(resultList);
+                //null check
+                promise.complete(resultList);
+            }
         }
         catch (Exception exception)
         {
@@ -709,13 +725,16 @@ public class DatabaseVerticle extends AbstractVerticle
         Connection connection = connectionPool.getConnection();
         try
         {
-            Operations operations = new Operations(connection);
+            if(!(connection.isClosed()))
+            {
+                Operations operations = new Operations(connection);
 
-            String query = "SELECT NAME,IPADDRESS,TYPE,DEVICEID,PROVISION FROM DISCOVERY_TABLE;";
+                String query = "SELECT NAME,IPADDRESS,TYPE,DEVICEID,PROVISION FROM DISCOVERY_TABLE;";
 
-            allData = operations.selectQuery(query);
+                allData = operations.selectQuery(query);
 
-            promise.complete(allData);
+                promise.complete(allData);
+            }
 
         }
         catch (Exception exception)
@@ -741,23 +760,25 @@ public class DatabaseVerticle extends AbstractVerticle
 
         try
         {
-            Operations operations = new Operations(connection);
-
-            String query = "SELECT IPADDRESS FROM MONITOR_TABLE ";
-
-            List<Map<String, Object>> selectResult = operations.selectQuery(query);
-
-            for(int index=0;index<selectResult.size();index++)
+            if(!(connection.isClosed()))
             {
-                String ip = selectResult.get(index).get("IPADDRESS").toString();
+                Operations operations = new Operations(connection);
 
-                result.add(ip);
+                String query = "SELECT IPADDRESS FROM MONITOR_TABLE ";
+
+                List<Map<String, Object>> selectResult = operations.selectQuery(query);
+
+                for(int index=0;index<selectResult.size();index++)
+                {
+                    String ip = selectResult.get(index).get("IPADDRESS").toString();
+
+                    result.add(ip);
+                }
+                logger.info("Fetched Data for Availiblity Polling "+result);
+
+                promise.complete(result);
+
             }
-
-            logger.info("Fetched Data for Availiblity Polling "+result);
-
-            promise.complete(result);
-
         }
         catch (Exception exception)
         {
@@ -782,27 +803,29 @@ public class DatabaseVerticle extends AbstractVerticle
 
         Connection connection = connectionPool.getConnection();
 
-       // add connection.isClosed();
-
-        Operations operations = new Operations(connection);
 
         try
         {
-            HashMap<String,Object> data = new HashMap<>();
+            if(!(connection.isClosed()))
+            {
+                Operations operations = new Operations(connection);
 
-            data.put("NAME",credentialData.getValue("name"));
+                HashMap<String, Object> data = new HashMap<>();
 
-            data.put("IPADDRESS",credentialData.getValue("ip"));
+                data.put("NAME",credentialData.getValue("name"));
 
-            data.put("TYPE",credentialData.getValue("type"));
+                data.put("IPADDRESS",credentialData.getValue("ip"));
 
-            data.put("USERNAME",credentialData.getValue("username"));
+                data.put("TYPE",credentialData.getValue("type"));
 
-            data.put("PASSWORD",credentialData.getValue("password"));
+                data.put("USERNAME",credentialData.getValue("username"));
 
-            operations.insert("DISCOVERY_TABLE",data);
+                data.put("PASSWORD",credentialData.getValue("password"));
 
-            promise.complete(true);
+                operations.insert("DISCOVERY_TABLE",data);
+
+                promise.complete(true);
+            }
         }
         catch (Exception exception)
         {
@@ -823,20 +846,22 @@ public class DatabaseVerticle extends AbstractVerticle
 
         Connection connection = connectionPool.getConnection();
 
-        Operations operations = new Operations(connection);
-
         try
         {
-            HashMap<String,Object> data = new HashMap<>();
+            if(!(connection.isClosed()))
+            {
+                Operations operations = new Operations(connection);
 
-            data.put("PROVISION",true);
+                HashMap<String, Object> data = new HashMap<>();
 
-            String whereClause = "DEVICEID = " + Integer.valueOf(deviceID);
+                data.put("PROVISION",true);
 
-            //if update then only success
-            operations.update("DISCOVERY_TABLE",data,whereClause);
+                String whereClause = "DEVICEID = " + Integer.valueOf(deviceID);
 
-            promise.complete(true);
+                operations.update("DISCOVERY_TABLE",data,whereClause);
+
+                promise.complete(true);
+            }
 
         }
         catch (Exception exception)
@@ -859,29 +884,32 @@ public class DatabaseVerticle extends AbstractVerticle
 
         Connection connection = connectionPool.getConnection();
 
-        Operations operations = new Operations(connection);
-
         try
         {
-            HashMap<String,Object> data = new HashMap<>();
+            if(!(connection.isClosed()))
+            {
+                Operations operations = new Operations(connection);
 
-            data.put("NAME",credentialData.getValue("name"));
+                HashMap<String, Object> data = new HashMap<>();
 
-            data.put("IPADDRESS",credentialData.getValue("ip"));
+                data.put("NAME",credentialData.getValue("name"));
 
-            data.put("TYPE",credentialData.getValue("type"));
+                data.put("IPADDRESS",credentialData.getValue("ip"));
 
-            data.put("USERNAME",credentialData.getValue("username"));
+                data.put("TYPE",credentialData.getValue("type"));
 
-            data.put("PASSWORD",credentialData.getValue("password"));
+                data.put("USERNAME",credentialData.getValue("username"));
 
-            data.put("PROVISION",false);
+                data.put("PASSWORD",credentialData.getValue("password"));
 
-            String whereClause = "DEVICEID = "+credentialData.getString("id");
+                data.put("PROVISION",false);
 
-            operations.update("DISCOVERY_TABLE",data,whereClause);
+                String whereClause = "DEVICEID = "+credentialData.getString("id");
 
-            promise.complete(true);
+                operations.update("DISCOVERY_TABLE",data,whereClause);
+
+                promise.complete(true);
+            }
         }
         catch (Exception exception)
         {
@@ -902,27 +930,30 @@ public class DatabaseVerticle extends AbstractVerticle
 
         Connection connection = connectionPool.getConnection();
 
-        Operations operations = new Operations(connection);
-
         try
         {
-            HashMap<String,Object> data = new HashMap<>();
+            if(!(connection.isClosed()))
+            {
+                Operations operations = new Operations(connection);
 
-            data.put("DEVICEID",credentialData.getValue("id"));
+                HashMap<String, Object> data = new HashMap<>();
 
-            data.put("NAME",credentialData.getValue("name"));
+                data.put("DEVICEID",credentialData.getValue("id"));
 
-            data.put("IPADDRESS",credentialData.getValue("ip"));
+                data.put("NAME",credentialData.getValue("name"));
 
-            data.put("TYPE",credentialData.getValue("type"));
+                data.put("IPADDRESS",credentialData.getValue("ip"));
 
-            data.put("USERNAME",credentialData.getValue("username"));
+                data.put("TYPE",credentialData.getValue("type"));
 
-            data.put("PASSWORD",credentialData.getValue("password"));
+                data.put("USERNAME",credentialData.getValue("username"));
 
-            operations.insert("MONITOR_TABLE",data);
+                data.put("PASSWORD",credentialData.getValue("password"));
 
-            promise.complete(true);
+                operations.insert("MONITOR_TABLE",data);
+
+                promise.complete(true);
+            }
         }
         catch (Exception exception)
         {
@@ -945,17 +976,37 @@ public class DatabaseVerticle extends AbstractVerticle
 
         Connection connection = connectionPool.getConnection();
 
-        try
+        String[] insertData = new String[]{"cpu.idle.percentage","cpu.system.percentage","cpu.user.percentage","disk.used.percentage","memory.free.percentage","memory.used.percentage","operating.system.name","operating.system.version","system.name","uptime"};
+
+        try(PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO POLLING_TABLE VALUES(?,?,?,?,?)"))
         {
-            ObjectMapper mapper = new ObjectMapper();
-
-            JsonNode jsonArray = mapper.readTree(String.valueOf(data));
-
-            for (JsonNode jsonObject : jsonArray)
+            if(!(connection.isClosed()))
             {
-                batchExecute(jsonObject);
+                ObjectMapper mapper = new ObjectMapper();
+
+                JsonNode jsonArray = mapper.readTree(String.valueOf(data));
+
+                for (JsonNode jsonObject : jsonArray)
+                {
+                    for (String dataName: insertData)
+                    {
+                        preparedStatement.setObject(1, jsonObject.get("id").asText());
+
+                        preparedStatement.setObject(2,jsonObject.get("ip").asText());
+
+                        preparedStatement.setObject(3,dataName);
+
+                        preparedStatement.setObject(4,jsonObject.get(dataName).asText());
+
+                        preparedStatement.setObject(5,jsonObject.get("timestamp").asText());
+
+                        preparedStatement.addBatch();
+                    }
+                }
+                preparedStatement.executeBatch();
+
+                promise.complete(true);
             }
-            promise.complete(true);
         }
         catch (Exception exception)
         {
@@ -980,27 +1031,30 @@ public class DatabaseVerticle extends AbstractVerticle
 
         try
         {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO AVAILABILITY_TABLE(IPADDRESS,STATUS) VALUES(?,?)");
-
-            for(Map.Entry<String, String> m: map.entrySet())
+            if(!(connection.isClosed()))
             {
-                preparedStatement.setString(1,m.getKey().toString());
+                PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO AVAILABILITY_TABLE(IPADDRESS,STATUS) VALUES(?,?)");
 
-                preparedStatement.setString(2,m.getValue().toString());
+                for(Map.Entry<String, String> m: map.entrySet())
+                {
+                    preparedStatement.setString(1,m.getKey().toString());
 
-                preparedStatement.addBatch();
+                    preparedStatement.setString(2,m.getValue().toString());
+
+                    preparedStatement.addBatch();
+                }
+                preparedStatement.executeBatch();
+
+                PreparedStatement statementforMonitorTableUpdate = connection.prepareStatement("UPDATE MONITOR_TABLE M SET M.STATUS=CASE WHEN M.IPADDRESS IN (SELECT DISTINCT IPADDRESS FROM AVAILABILITY_TABLE WHERE STATUS='Up' AND TIMESTAMP >= NOW()-INTERVAL '2' MINUTE) THEN 'Up' ELSE 'Down' END;");
+
+                statementforMonitorTableUpdate.executeUpdate();
+
+                promise.complete(true);
             }
-            preparedStatement.executeBatch();
-
-            PreparedStatement statementforMonitorTableUpdate = connection.prepareStatement("UPDATE MONITOR_TABLE M SET M.STATUS=CASE WHEN M.IPADDRESS IN (SELECT DISTINCT IPADDRESS FROM AVAILABILITY_TABLE WHERE STATUS='Up' AND TIMESTAMP >= NOW()-INTERVAL '2' MINUTE) THEN 'Up' ELSE 'Down' END;");
-
-            statementforMonitorTableUpdate.executeUpdate();
-
-            promise.complete(true);
         }
         catch (Exception exception)
         {
-            promise.fail("Some error in dumping avaliliblaty data in Ddatabse");
+            promise.fail("Some error in dumping availability data in Database");
 
             promise.complete(false);
 
@@ -1013,45 +1067,6 @@ public class DatabaseVerticle extends AbstractVerticle
         return promise.future();
     }
 
-    private void batchExecute(JsonNode data)
-    {
-        String[] insertData = new String[]{"cpu.idle.percentage","cpu.system.percentage","cpu.user.percentage","disk.used.percentage","memory.free.percentage","memory.used.percentage","operating.system.name","operating.system.version","system.name","uptime"};
-
-        Connection connection = connectionPool.getConnection();
-
-        try (PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO POLLING_TABLE VALUES(?,?,?,?,?)"))
-        {
-            for (String dataName: insertData)
-            {
-                if(dataName != null)
-                {
-                    preparedStatement.setObject(1,data.get("id").asText());
-
-                    preparedStatement.setObject(2,data.get("ip").asText());
-
-                    preparedStatement.setObject(3,dataName);
-
-                    preparedStatement.setObject(4,data.get(dataName).asText());
-
-                    preparedStatement.setObject(5,data.get("timestamp").asText());
-
-                    preparedStatement.addBatch();
-                }
-            }
-
-            preparedStatement.executeBatch();
-
-        }
-        catch (Exception exception)
-        {
-            exception.printStackTrace();
-        }
-
-        finally
-        {
-            connectionPool.releaseConnection(connection);
-        }
-    }
 
 
 }

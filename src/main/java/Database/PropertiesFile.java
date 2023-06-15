@@ -24,7 +24,6 @@ public class PropertiesFile
            exception.printStackTrace();
        }
 
-
         URL = properties.getProperty("URL");
 
         USER = properties.getProperty("USER");
@@ -38,11 +37,13 @@ public class PropertiesFile
 
     public static String PASSWORD;
 
-    public static String getURL() {
+    public static String getURL()
+    {
         return URL;
     }
 
-    public static String getUSER() {
+    public static String getUSER()
+    {
         return USER;
     }
 

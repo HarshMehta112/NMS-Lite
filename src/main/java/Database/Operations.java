@@ -24,8 +24,6 @@ public class Operations
 
 
     //insert operation
-    // remove whereclause
-    //try catch in every method
     public int insert (String tableName, Map< String, Object > data)
     {
 
@@ -113,7 +111,7 @@ public class Operations
         return 0;
     }
 
-    public List< Map< String, Object > > selectQuery (String query) throws SQLException
+    public List< Map< String, Object > > selectQuery (String query)
     {
 
         try ( PreparedStatement statement = connection.prepareStatement(query) )

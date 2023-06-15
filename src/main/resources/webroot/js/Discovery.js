@@ -120,7 +120,7 @@ var discoverymain = {
         };
         genericAjaxCall.ajaxpost(request);
 
-        location.reload()
+        discoverymain.onload();
 
     },
 
