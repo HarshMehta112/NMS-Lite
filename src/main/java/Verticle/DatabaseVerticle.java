@@ -540,7 +540,7 @@ public class DatabaseVerticle extends AbstractVerticle
 
                 List<Map<String, Object>> allData;
 
-                String query = "SELECT IPADDRESS,USERNAME,PASSWORD,TYPE,DEVICEID FROM MONITOR_TABLE ";
+                String query = "SELECT IPADDRESS,USERNAME,PASSWORD,TYPE,DEVICEID FROM MONITOR_TABLE WHERE STATUS='Up'";
 
                 allData = operations.selectQuery(query);
 

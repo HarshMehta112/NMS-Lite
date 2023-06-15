@@ -6,7 +6,6 @@ import io.vertx.core.json.JsonArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -106,8 +105,11 @@ public class SpawnProcess
 
             while ((line = reader.readLine()) != null)
             {
-                array = mapper.readTree(line);
+                JsonArray jsonArray = new JsonArray(line);
+
+                resultJsonarray.addAll(jsonArray);
             }
+            array = mapper.readTree(resultJsonarray.toString());
 
             process.waitFor(60,TimeUnit.SECONDS);
 
