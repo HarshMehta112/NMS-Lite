@@ -46,7 +46,7 @@ public class PollingEngine extends AbstractVerticle
 
                     if(time<=0)
                     {
-                        logger.info("Polling Started .... "+entry.getKey());
+                        logger.debug("Polling Started .... "+entry.getKey());
 
                         if(entry.getKey().equals("sshPolling"))
                         {
@@ -58,24 +58,24 @@ public class PollingEngine extends AbstractVerticle
                                     {
                                         JsonNode outputFromPlugin = SpawnProcess.spwanProcess(response.result().body());
 
-                                        logger.info("Output From SSH Plugin "+outputFromPlugin);
+                                        logger.debug("Output From SSH Plugin "+outputFromPlugin);
 
                                         eventBus.<JsonNode>request(Constants.OUTPUT_SSH_POLLING,outputFromPlugin,result->
                                         {
                                             if(result.succeeded())
                                             {
-                                                logger.info("Polling Data Dumped into the Database");
+                                                logger.debug("Polling Data Dumped into the Database");
                                             }
                                             else
                                             {
-                                                logger.info("Some error in dumping the ssh polling data into Database");
+                                                logger.debug("Some error in dumping the ssh polling data into Database");
                                             }
                                         });
                                     });
                                 }
                                 else
                                 {
-                                    logger.info("Some Problem in loading Discovery Devices");
+                                    logger.debug("Some Problem in loading Discovery Devices");
                                 }
                             });
                         }
@@ -94,17 +94,17 @@ public class PollingEngine extends AbstractVerticle
                                         {
                                             HashMap<String,String> fpingPluginResult = SpawnProcess.fpingForAvailibility(response.result().body());
 
-                                            logger.info("Output from fping plugin "+fpingPluginResult);
+                                            logger.debug("Output from fping plugin "+fpingPluginResult);
 
                                             eventBus.<HashMap<String ,String>>request(Constants.OUTPUT_AVAILABILITY_POLLING,fpingPluginResult,result->
                                             {
                                                 if(result.succeeded())
                                                 {
-                                                    logger.info("Fping polling data successfully dumped into database");
+                                                    logger.debug("Fping polling data successfully dumped into database");
                                                 }
                                                 else
                                                 {
-                                                    logger.info(response.cause().getMessage()); //exception   chceck
+//                                                    logger.debug(response.cause().getMessage()); //exception   chceck
                                                 }
                                             });
 
@@ -117,7 +117,7 @@ public class PollingEngine extends AbstractVerticle
                                 }
                                 else
                                 {
-                                    logger.info("Some error in loading monitor ip address");
+                                    logger.debug("Some error in loading monitor ip address");
                                 }
                             });
                         }

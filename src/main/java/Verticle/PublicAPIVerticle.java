@@ -2,6 +2,7 @@ package Verticle;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonArray;
@@ -27,9 +28,9 @@ public class PublicAPIVerticle extends AbstractVerticle
     EventBus eventBus;
 
     @Override
-    public void start(Promise<Void> startPromise) throws Exception
+    public void start(Promise<Void> startPromise)
     {
-        eventBus = vertx.eventBus();
+        eventBus = getVertx().eventBus();
 
         Router router = Router.router(vertx);
 
@@ -54,19 +55,19 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.route("/login/Add").handler(routingContext ->
             {
-                eventBus.request(Constants.ADD_DISCOVERY_DEVICE,routingContext.body().asJsonObject(),response->
+                eventBus.request(Constants.DATABASE_CONSUMER,routingContext.body().asJsonObject().put("RequestFrom",Constants.ADD_DISCOVERY_DEVICE),response->
                 {
                     if(response.succeeded())
                     {
                         routingContext.response().setStatusCode(200).end("added");
 
-                        logger.info("Discovery Device Added");
+                        logger.debug("Discovery Device Added");
                     }
                     else
                     {
                         routingContext.response().end("Not Added");
 
-                        logger.info("Discovery Device Not Added");
+                        logger.debug("Discovery Device Not Added");
                     }
                 });
 
@@ -74,18 +75,18 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.route("/login/LoadMonitorTable*").handler(routingContext ->
             {
-                eventBus.<JsonArray>request(Constants.LOAD_MONITOR_DEVICE,"",response->
+                eventBus.<JsonArray>request(Constants.DATABASE_CONSUMER,new JsonObject().put("RequestFrom",Constants.LOAD_MONITOR_DEVICE),response->
                 {
                     if(response.succeeded())
                     {
-                        logger.info("response from database verticle "+response.result().body());
+                        logger.debug("response from database verticle "+response.result().body());
 
                         routingContext.response().setStatusCode(200).end(response.result().body().encodePrettily());
                     }
                     //migrate into one method
                     else
                     {
-                        logger.info("Some Problem in loading Monitor Devices");
+                        logger.debug("Some Problem in loading Monitor Devices");
 
                         routingContext.response().end("Some Problem in loading Monitor Devices");
                     }
@@ -95,7 +96,7 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.route("/login/Load").handler(routingContext ->
             {
-                eventBus.<JsonArray>request(Constants.GET_ALL_DISCOVERY_DEVICE,"", response->
+                eventBus.<JsonArray>request(Constants.DATABASE_CONSUMER,new JsonObject().put("RequestFrom",Constants.GET_ALL_DISCOVERY_DEVICE), response->
                 {
                     if(response.succeeded())
                     {
@@ -103,9 +104,7 @@ public class PublicAPIVerticle extends AbstractVerticle
                     }
                     else
                     {
-                        logger.info("Some Problem in loading Discovery Devices");
-
-                        routingContext.response().end("Some Problem in loading Discovery Devices");
+                        routingContext.response().end((Buffer) response.result().body());
                     }
                 });
             });
@@ -113,7 +112,7 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.route("/login/Delete").handler(routingContext ->
             {
-                eventBus.request(Constants.DELETE_DISCOVERY_DEVICE,routingContext.body().asJsonObject(),response->
+                eventBus.request(Constants.DATABASE_CONSUMER,routingContext.body().asJsonObject().put("RequestFrom",Constants.DELETE_DISCOVERY_DEVICE),response->
                 {
                     if(response.succeeded())
                     {
@@ -128,9 +127,9 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.route("/login/DeleteMonitorDevice").handler(routingContext ->
             {
-                logger.info("Delete Monitor Id "+routingContext.body().asJsonObject());
+                logger.debug("Delete Monitor Id "+routingContext.body().asJsonObject());
 
-                eventBus.request(Constants.DELETE_MONITOR_DEVICE,routingContext.body().asJsonObject(),response->
+                eventBus.request(Constants.DATABASE_CONSUMER,routingContext.body().asJsonObject().put("RequestFrom",Constants.DELETE_MONITOR_DEVICE),response->
                 {
                     if(response.succeeded())
                     {
@@ -146,7 +145,7 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.route("/login/RunDiscovery").handler(routingContext ->
             {
-                eventBus.request(Constants.RUN_DISCOVERY,routingContext.body().asJsonObject(),response->
+                eventBus.request(Constants.DATABASE_CONSUMER,routingContext.body().asJsonObject().put("RequestFrom",Constants.RUN_DISCOVERY),response->
                 {
                     if(response.succeeded())
                     {
@@ -161,7 +160,7 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.route("/login/provision").handler(routingContext ->
             {
-                eventBus.request(Constants.RUN_PROVISION,routingContext.body().asJsonObject(),response->
+                eventBus.request(Constants.DATABASE_CONSUMER,routingContext.body().asJsonObject().put("RequestFrom",Constants.RUN_PROVISION),response->
                 {
                     if(response.succeeded())
                     {
@@ -176,7 +175,7 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.route("/login/dashboard").handler(routingContext ->
             {
-                eventBus.request(Constants.DASHBOARD_LOAD,"",response->
+                eventBus.request(Constants.DATABASE_CONSUMER,new JsonObject().put("RequestFrom",Constants.DASHBOARD_LOAD),response->
                 {
                     if(response.succeeded())
                     {
@@ -192,11 +191,11 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.route("/login/deviceInfo").handler(routingContext ->
             {
-                eventBus.<JsonObject>request(Constants.MONITOR_DEVICE_INFO,routingContext.request().getParam("deviceId"), response->
+                eventBus.<JsonObject>request(Constants.DATABASE_CONSUMER,routingContext.body().asJsonObject().put("RequestFrom",Constants.MONITOR_DEVICE_INFO), response->
                 {
                     if(response.succeeded())
                     {
-                        logger.info("Response "+response.result().body().encodePrettily());
+                        logger.debug("Response "+response.result().body().encodePrettily());
 
                         routingContext.response().end(response.result().body().toString());
                     }
@@ -211,19 +210,19 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.route("/login/Edit").handler(routingContext ->
             {
-                eventBus.request(Constants.EDIT_DISCOVERY_DEVICE,routingContext.body().asJsonObject(),response->
+                eventBus.request(Constants.DATABASE_CONSUMER,routingContext.body().asJsonObject().put("RequestFrom",Constants.EDIT_DISCOVERY_DEVICE),response->
                 {
                     if(response.succeeded())
                     {
                         routingContext.response().setStatusCode(200).end("Edited");
 
-                        logger.info("Discovery Device Edited");
+                        logger.debug("Discovery Device Edited");
                     }
                     else
                     {
                         routingContext.response().end("Not Edited");
 
-                        logger.info("Discovery Device Not Edited");
+                        logger.debug("Discovery Device Not Edited");
                     }
                 });
             });
@@ -236,7 +235,6 @@ public class PublicAPIVerticle extends AbstractVerticle
                     .addOutboundPermitted(new PermittedOptions().setAddressRegex("updates.*"));
 
             router.mountSubRouter("/login/eventbus",jsHandler.bridge(bridgeOptions));
-
 
             router.route("/login/logout").handler(context -> {
 
@@ -258,20 +256,22 @@ public class PublicAPIVerticle extends AbstractVerticle
                     {
                         if(ready.succeeded())
                         {
-                            logger.info("server started listening on port no 8080");
+                            logger.debug("server started listening on port no 8080");
                         }
                         else
                         {
-                            logger.info("some error occurred with server" + ready.cause().getMessage());
+                            startPromise.fail(ready.cause());
+
+                            logger.debug("some error occurred with server" + ready.cause().getMessage());
                         }
                     });
+
+            startPromise.complete();
         }
         catch (Exception exception)
         {
-            exception.printStackTrace();
+            logger.error(exception.getCause().toString());
         }
-
-        startPromise.complete();
 
     }
 }

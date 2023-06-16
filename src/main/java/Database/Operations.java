@@ -1,24 +1,21 @@
 package Database;
 
-import Verticle.PublicAPIVerticle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.beans.PropertyEditorSupport;
 import java.sql.*;
 import java.util.*;
 
 
 public class Operations
 {
-
     private static final Logger logger = LoggerFactory.getLogger(Operations.class);
+
     private Connection connection;
 
     // Constructor
     public Operations(Connection connection)
     {
-
         this.connection = connection;
     }
 
@@ -49,7 +46,7 @@ public class Operations
         }
         catch (Exception exception)
         {
-            exception.printStackTrace();
+            logger.error(exception.getCause().getMessage());
         }
         return 0;
     }
@@ -88,7 +85,7 @@ public class Operations
         }
         catch (Exception exception)
         {
-            exception.printStackTrace();
+            logger.error(exception.getCause().getMessage());
         }
         return 0;
     }
@@ -106,7 +103,7 @@ public class Operations
         }
         catch (Exception exception)
         {
-            exception.printStackTrace();
+            logger.error(exception.getCause().getMessage());
         }
         return 0;
     }
@@ -138,7 +135,7 @@ public class Operations
         }
         catch (Exception exception)
         {
-            exception.printStackTrace();
+            logger.error(exception.getCause().getMessage());
         }
         return null;
     }

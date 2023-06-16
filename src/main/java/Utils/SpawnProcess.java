@@ -18,6 +18,8 @@ public class SpawnProcess
 {
     private static final Logger logger = LoggerFactory.getLogger(SpawnProcess.class);
 
+    static ObjectMapper mapper = new ObjectMapper();
+
     public static HashMap<String, String> fpingForAvailibility(ArrayList<String> list)
     {
         HashMap<String, String> fpingResult = new HashMap<>();
@@ -34,7 +36,11 @@ public class SpawnProcess
 
         command.addAll(list);
 
-        logger.info("Fping command for checking availability of device " + command);
+        BufferedReader reader = null;
+
+        Process process = null;
+
+        logger.debug("Fping command for checking availability of device " + command);
 
         try
         {
@@ -44,11 +50,11 @@ public class SpawnProcess
 
             processBuilder.redirectErrorStream(true);
 
-            Process process = processBuilder.start();
+            process = processBuilder.start();
 
             InputStream processInputStream = process.getInputStream();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(processInputStream));
+            reader = new BufferedReader(new InputStreamReader(processInputStream));
 
             String line ;
 
@@ -70,22 +76,36 @@ public class SpawnProcess
         }
         catch (Exception exception)
         {
-            exception.printStackTrace();
+            logger.error(exception.getCause().getMessage());
+        }
+        finally
+        {
+           try
+           {
+               reader.close();
+
+               process.destroy();
+           }
+           catch (Exception exception)
+           {
+               logger.error(exception.getCause().getMessage());
+           }
         }
 
-        logger.info("Result of fping Polling "+fpingResult);
+        logger.debug("Result of fping Polling "+fpingResult);
 
         return fpingResult;
     }
 
-    //make spawn process generic
     public static JsonNode spwanProcess(JsonArray credential) {
 
         String encoder = (Base64.getEncoder().encodeToString((credential).toString().getBytes(StandardCharsets.UTF_8)));
-        System.out.println(encoder);
-        BufferedReader reader;
 
-        Process process;
+        logger.debug("Encoded String "+ encoder);
+
+        BufferedReader reader = null;
+
+        Process process = null;
 
         JsonArray resultJsonarray = new JsonArray();
 
@@ -101,8 +121,6 @@ public class SpawnProcess
 
             String line;
 
-            ObjectMapper mapper = new ObjectMapper();
-
             while ((line = reader.readLine()) != null)
             {
                 JsonArray jsonArray = new JsonArray(line);
@@ -113,12 +131,26 @@ public class SpawnProcess
 
             process.waitFor(60,TimeUnit.SECONDS);
 
-            logger.info("Output from golang exe Plugin "+resultJsonarray);
+            logger.debug("Output from golang exe Plugin "+resultJsonarray);
 
         }
         catch (Exception exception)
         {
             exception.printStackTrace();
+        }
+        finally
+        {
+           try
+           {
+               reader.close();
+
+               process.destroy();
+           }
+           catch (Exception exception)
+           {
+               logger.error(exception.getCause().getMessage());
+           }
+
         }
 
         return array;

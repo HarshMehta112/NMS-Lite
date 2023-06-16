@@ -1,6 +1,7 @@
 package Database;
 import Utils.Constants;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Properties;
 
 
@@ -12,9 +13,11 @@ public class PropertiesFile
 
         Properties properties = new Properties();
 
+        FileInputStream fileInputStream = null;
+
        try
        {
-           FileInputStream fileInputStream = new FileInputStream(Constants.DATABASE_PROPERTIES_PATH);
+           fileInputStream  = new FileInputStream(Constants.DATABASE_PROPERTIES_PATH);
 
            properties.load(fileInputStream);
 
@@ -22,6 +25,17 @@ public class PropertiesFile
        catch (Exception exception)
        {
            exception.printStackTrace();
+       }
+       finally
+       {
+           try
+           {
+               fileInputStream.close();
+           }
+           catch (IOException e)
+           {
+
+           }
        }
 
         URL = properties.getProperty("URL");

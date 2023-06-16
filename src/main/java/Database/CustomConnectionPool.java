@@ -1,6 +1,9 @@
 package Database;
 
+import Utils.SpawnProcess;
 import Utils.UserConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -11,6 +14,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 public class CustomConnectionPool
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(CustomConnectionPool.class);
 
     private static String URL ;
 
@@ -35,25 +40,11 @@ public class CustomConnectionPool
         poolSize=INITIALPOLLSIZE;
     }
 
-    private CustomConnectionPool(int size)
-    {
-        poolSize = size;
-    }
-
     public static CustomConnectionPool getInstance()
     {
         if(customConnectionPool==null)
         {
             customConnectionPool = new CustomConnectionPool();
-        }
-        return customConnectionPool;
-    }
-
-    public static CustomConnectionPool getInstance(int size)
-    {
-        if(customConnectionPool==null)
-        {
-            customConnectionPool = new CustomConnectionPool(size);
         }
         return customConnectionPool;
     }
@@ -77,38 +68,7 @@ public class CustomConnectionPool
         this.PASSWORD = PASSWORD;
     }
 
-
-    public String getURL ()
-    {
-
-        return URL;
-    }
-
-    public String getUser ()
-    {
-
-        return USER;
-    }
-
-    public String getPassword ()
-    {
-
-        return PASSWORD;
-    }
-
-    public int getActiveConnections ()
-    {
-
-        return activeConnection.size();
-    }
-
-    public int getMaxConnections ()
-    {
-
-        return MAXPOOLSIZE;
-    }
-
-    public void createConnectionPool ()
+    public boolean createConnectionPool ()
     {
 
         if ( poolSize < MAXPOOLSIZE )
@@ -125,7 +85,9 @@ public class CustomConnectionPool
                 }
                 catch ( SQLException exception )
                 {
-                    exception.printStackTrace();
+                    logger.error(exception.getCause().getMessage());
+
+                    return false;
                 }
             }
         }
@@ -133,6 +95,7 @@ public class CustomConnectionPool
         {
             throw new RuntimeException("Please enter pool size appropriately");
         }
+        return true;
     }
 
     public Connection getConnection ()
@@ -157,7 +120,7 @@ public class CustomConnectionPool
         }
         catch ( InterruptedException exception )
         {
-            exception.printStackTrace();
+            logger.error(exception.getCause().getMessage());
         }
 
     }
@@ -174,7 +137,7 @@ public class CustomConnectionPool
             }
             catch ( Exception exception )
             {
-                exception.printStackTrace();
+                logger.error(exception.getCause().getMessage());
             }
         }
     }
