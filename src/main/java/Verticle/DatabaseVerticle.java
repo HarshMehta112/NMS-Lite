@@ -150,26 +150,26 @@ public class DatabaseVerticle extends AbstractVerticle
 
         eventBus.localConsumer(Constants.SSH_POLLING_PROCESS_TRIGGERED,handler->
         {
-           vertx.executeBlocking(blockingHandler->
-           {
-               fetchMonitorData().onComplete(result->
-               {
-                   if(fetchMonitorData().succeeded())
-                   {
-                       JsonArray fetchDataFromMonitorTable = fetchMonitorData().result();
+            vertx.executeBlocking(blockingHandler->
+            {
+                fetchMonitorData().onComplete(result->
+                {
+                    if(fetchMonitorData().succeeded())
+                    {
+                        JsonArray fetchDataFromMonitorTable = fetchMonitorData().result();
 
-                       logger.info("SSH polling exe file input data "+fetchDataFromMonitorTable);
+                        logger.info("SSH polling exe file input data "+fetchDataFromMonitorTable);
 
-                       handler.reply(fetchDataFromMonitorTable);
-                   }
-                   else
-                   {
-                       logger.error("Enable to fetch the Discovery Data from Database for ssh polling");
+                        handler.reply(fetchDataFromMonitorTable);
+                    }
+                    else
+                    {
+                        logger.error("Enable to fetch the Discovery Data from Database for ssh polling");
 
-                       handler.reply("Enable to fetch the Discovery Data from Database for ssh polling");
-                   }
-               });
-           },false);
+                        handler.reply("Enable to fetch the Discovery Data from Database for ssh polling");
+                    }
+                });
+            },false);
         });
 
         eventBus.localConsumer(Constants.AVAILABILITY_POLLING_PROCESS_TRIGGERED,handler->
@@ -233,9 +233,11 @@ public class DatabaseVerticle extends AbstractVerticle
         {
             vertx.executeBlocking(blockingHandler->
             {
-                DeleteDevice(handler.body().toString()).onComplete(result->
+                JsonObject deviceId = (JsonObject) handler.body();
+
+                DeleteDevice(deviceId.getString("id")).onComplete(result->
                 {
-                    if(DeleteDevice(handler.body().toString()).succeeded())
+                    if(DeleteDevice(deviceId.getString("id")).succeeded())
                     {
                         handler.reply("Device deleted successfully");
 
@@ -262,10 +264,10 @@ public class DatabaseVerticle extends AbstractVerticle
 
                     logger.info("Monitor Device information "+resultInfo);
 
-                   if(monitorDeviceInfo(handler.body().toString()).succeeded())
-                   {
-                       handler.reply(resultInfo);
-                   }
+                    if(monitorDeviceInfo(handler.body().toString()).succeeded())
+                    {
+                        handler.reply(resultInfo);
+                    }
                 });
             },false);
         });
@@ -274,24 +276,26 @@ public class DatabaseVerticle extends AbstractVerticle
 
         eventBus.localConsumer(Constants.DELETE_MONITOR_DEVICE,handler->
         {
-           vertx.executeBlocking(blockingHandler->
-           {
-               deleteMonitorDevice(handler.body().toString()).onComplete(result->
-               {
-                   if(deleteMonitorDevice(handler.body().toString()).succeeded())
-                   {
-                       handler.reply("Monitor Device deleted successfully");
+            vertx.executeBlocking(blockingHandler->
+            {
+                JsonObject deviceId = new JsonObject();
 
-                       logger.info("Monitor Device deleted successfully");
-                   }
-                   else
-                   {
-                       handler.reply("Enbale to delete Monitor Device");
+                deleteMonitorDevice(deviceId.getString("id")).onComplete(result->
+                {
+                    if(deleteMonitorDevice(deviceId.getString("id")).succeeded())
+                    {
+                        handler.reply("Monitor Device deleted successfully");
 
-                       logger.info("Enbale to delete Monitor Device");
-                   }
-               });
-           },false);
+                        logger.info("Monitor Device deleted successfully");
+                    }
+                    else
+                    {
+                        handler.reply("Enbale to delete Monitor Device");
+
+                        logger.info("Enbale to delete Monitor Device");
+                    }
+                });
+            },false);
         });
 
 
@@ -299,7 +303,9 @@ public class DatabaseVerticle extends AbstractVerticle
         {
             vertx.executeBlocking(blockingHandler->
             {
-                fetchDiscoveryDatabyID(handler.body().toString()).onComplete(result->
+                JsonObject deviceId = (JsonObject) handler.body();
+
+                fetchDiscoveryDatabyID(deviceId.getString("id")).onComplete(result->
                 {
                     JsonObject data = result.result();
 
@@ -326,19 +332,19 @@ public class DatabaseVerticle extends AbstractVerticle
         {
             vertx.executeBlocking(blockingHandler->
             {
-                fetchDiscoveryDatabyID(handler.body().toString()).onComplete(result->
+                JsonObject deviceId = (JsonObject) handler.body();
+
+                fetchDiscoveryDatabyID(deviceId.getString("id")).onComplete(result->
                 {
-                    eventBus.request(Constants.RUN_DISCOVERY_SPAWN_PEROCESS,fetchDiscoveryDatabyID(handler.body().toString()).result(),response->
+                    eventBus.request(Constants.RUN_DISCOVERY_SPAWN_PEROCESS,fetchDiscoveryDatabyID(deviceId.getString("id")).result(),response->
                     {
                         if(response.succeeded())
                         {
-                            String deviceId = response.result().body().toString();
-
-                            if(!deviceId.equals(""))
+                            if(!deviceId.getString("id").equals(""))
                             {
-                                logger.info("Device Id of discovery device "+deviceId);
+                                logger.info("Device Id of discovery device "+deviceId.getString("id"));
 
-                                if(updateDiscovery(deviceId).succeeded())
+                                if(updateDiscovery(deviceId.getString("id")).succeeded())
                                 {
                                     logger.info("Discovery Table Updated with Provision value");
                                 }
@@ -354,7 +360,7 @@ public class DatabaseVerticle extends AbstractVerticle
                         }
                     });
 
-                    if(fetchDiscoveryDatabyID(handler.body().toString()).succeeded())
+                    if(fetchDiscoveryDatabyID(deviceId.getString("id")).succeeded())
                     {
                         handler.reply("Device discovered successfully");
 
@@ -587,31 +593,31 @@ public class DatabaseVerticle extends AbstractVerticle
 
         try
         {
-           if(!(connection.isClosed()))
-           {
-               Operations operations = new Operations(connection);
+            if(!(connection.isClosed()))
+            {
+                Operations operations = new Operations(connection);
 
-               List<Map<String, Object>> allData;
+                List<Map<String, Object>> allData;
 
-               String query = "SELECT IPADDRESS,USERNAME,PASSWORD,NAME,TYPE FROM DISCOVERY_TABLE WHERE DEVICEID = "+Integer.valueOf(deviceID);
+                String query = "SELECT IPADDRESS,USERNAME,PASSWORD,NAME,TYPE FROM DISCOVERY_TABLE WHERE DEVICEID = "+Integer.valueOf(deviceID);
 
-               allData = operations.selectQuery(query);
+                allData = operations.selectQuery(query);
 
-               credentialData.put("username",allData.get(0).get("USERNAME"));
+                credentialData.put("username",allData.get(0).get("USERNAME"));
 
-               credentialData.put("password",allData.get(0).get("PASSWORD"));
+                credentialData.put("password",allData.get(0).get("PASSWORD"));
 
-               credentialData.put("ip",allData.get(0).get("IPADDRESS"));
+                credentialData.put("ip",allData.get(0).get("IPADDRESS"));
 
-               credentialData.put("type",allData.get(0).get("TYPE"));
+                credentialData.put("type",allData.get(0).get("TYPE"));
 
-               credentialData.put("id",Integer.valueOf(deviceID));
+                credentialData.put("id",Integer.valueOf(deviceID));
 
-               credentialData.put("name",allData.get(0).get("NAME"));
+                credentialData.put("name",allData.get(0).get("NAME"));
 
-               promise.complete(credentialData);
+                promise.complete(credentialData);
 
-           }
+            }
         }
         catch (Exception exception)
         {
@@ -626,7 +632,7 @@ public class DatabaseVerticle extends AbstractVerticle
         return promise.future();
     }
 
-//use select query method
+    //use select query method
     private Future<JsonObject> monitorDeviceInfo(String deviceId)
     {
         Promise<JsonObject> promise = Promise.promise();
@@ -969,7 +975,7 @@ public class DatabaseVerticle extends AbstractVerticle
     }
 
 
-//update batch operation
+    //update batch operation
     private Future<Boolean> sshPollingDataDump(JsonNode data)
     {
         Promise<Boolean> promise = Promise.promise();

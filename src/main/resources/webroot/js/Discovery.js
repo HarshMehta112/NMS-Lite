@@ -82,13 +82,13 @@ var discoverymain = {
 
         var row = a.closest("tr")
 
-        var id = row.find("td:nth-child(1)").text();
+        var id = {"id":row.find("td:nth-child(1)").text()};
 
         let request = {
 
             url: "Delete",
 
-            data: {id},
+            data: JSON.stringify(id),
 
             callback: discoverycallback.deletemonitor,
 
@@ -103,7 +103,7 @@ var discoverymain = {
 
         var row = a.closest("tr")
 
-        var id = row.find("td:nth-child(1)").text();
+        var id = {"id":row.find("td:nth-child(1)").text()};
 
         var ip = row.find("td:nth-child(3)").text();
 
@@ -111,7 +111,7 @@ var discoverymain = {
 
             url: "RunDiscovery",
 
-            data: {id},
+            data: JSON.stringify(id),
 
             success:toastr.success(ip,"discovery started successfully"),
 
@@ -130,7 +130,7 @@ var discoverymain = {
 
         var row = a.closest("tr")
 
-        var id = row.find("td:nth-child(1)").text();
+        var id = {"id":row.find("td:nth-child(1)").text()};
 
         var ip = row.find("td:nth-child(3)").text();
 
@@ -138,7 +138,7 @@ var discoverymain = {
 
             url: "provision",
 
-            data: {id},
+            data: JSON.stringify(id),
 
             success:toastr.success(ip,"provision process started successfully"),
 

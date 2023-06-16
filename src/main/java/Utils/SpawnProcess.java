@@ -82,7 +82,7 @@ public class SpawnProcess
     public static JsonNode spwanProcess(JsonArray credential) {
 
         String encoder = (Base64.getEncoder().encodeToString((credential).toString().getBytes(StandardCharsets.UTF_8)));
-
+        System.out.println(encoder);
         BufferedReader reader;
 
         Process process;

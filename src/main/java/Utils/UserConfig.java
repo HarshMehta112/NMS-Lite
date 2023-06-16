@@ -14,5 +14,5 @@ public class UserConfig
 
     public static final int SCHEDULER_DELAY = 10*60;
 
-    public static final int DASHBOARD_REFRESH_DELAY = 50000;
+    public static final int DASHBOARD_REFRESH_DELAY = 5000;
 }

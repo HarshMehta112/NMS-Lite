@@ -46,7 +46,7 @@ var monitormain = {
 
         var row = a.closest("tr")
 
-        var id = row.find("td:nth-child(1)").text();
+        var id = {"id":row.find("td:nth-child(1)").text()};
 
         console.log(id)
 
@@ -54,7 +54,7 @@ var monitormain = {
 
             url: "DeleteMonitorDevice",
 
-            data: {id},
+            data: JSON.stringify(id),
 
             success:toastr.success("discovery device deleted successfully")
         };
