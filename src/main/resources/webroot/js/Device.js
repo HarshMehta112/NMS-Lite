@@ -47,3 +47,56 @@ devicehelper =
 
     }
 }
+
+
+$(document).ready(function() {
+    // Sample JSON array of timestamps and values
+    var jsonData = [
+        { timestamp: "2023-06-15 06:47:56", value: 8.03 },
+        { timestamp: "2023-06-15 06:47:26", value: 8.04 },
+        { timestamp: "2023-06-15 06:46:56", value: 8.05 },
+        { timestamp: "2023-06-15 06:46:26", value: 8.06 },
+        { timestamp: "2023-06-15 06:45:33", value: 8.07 },
+        { timestamp: "2023-06-15 06:45:03", value: 8.08 },
+        { timestamp: "2023-06-15 06:44:33", value: 8.09 },
+        { timestamp: "2023-06-15 06:44:03", value: 8.11 },
+        { timestamp: "2023-06-15 06:43:33", value: 8.12 }
+    ];
+
+    // Extract values and timestamps from jsonData
+    var values = jsonData.map(function(entry) {
+        return entry.value;
+    });
+    var timestamps = jsonData.map(function(entry) {
+        return entry.timestamp;
+    });
+
+    // Create the bar chart
+    var ctx = document.getElementById("myChart").getContext("2d");
+    new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: timestamps,
+            datasets: [
+                {
+                    label: "cpu.user.percentage",
+                    data: values,
+                    backgroundColor: "rgba(54, 162, 235, 0.5)",
+                    borderColor: "rgba(54, 162, 235, 1)",
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    display: false
+                },
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});

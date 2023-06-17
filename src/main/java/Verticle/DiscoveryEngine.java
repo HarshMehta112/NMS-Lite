@@ -48,19 +48,20 @@ public class DiscoveryEngine extends AbstractVerticle
                     try
                     {
                         jsonString = mapper.writeValueAsString(element);
+
                     }
                     catch (JsonProcessingException exception)
                     {
                         logger.error(exception.getCause().getMessage());
                     }
 
-                    if(jsonString.equals("\"success\""))
+                    if(jsonString.contains("success"))
                     {
-                        handler.reply(deviceDetails.getString("id"));
+                        handler.reply("true");
                     }
                     else
                     {
-                        handler.reply("");
+                        handler.reply("false");
                     }
 
                 },false);

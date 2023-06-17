@@ -191,11 +191,24 @@ public class DatabaseVerticle extends AbstractVerticle
                             {
                                 if(response.succeeded())
                                 {
-                                    if(!deviceId.getString("id").equals(""))
+                                    System.out.println(response.result().body());
+
+                                    if(response.result().body().equals("true"))
                                     {
                                         logger.debug("Device Id of discovery device "+deviceId.getString("id"));
 
-                                        if(updateDiscovery(deviceId.getString("id")).succeeded())
+                                        if(updateDiscovery(deviceId.getString("id"),true).succeeded())
+                                        {
+                                            logger.debug("Discovery Table Updated with Provision value");
+                                        }
+                                        else
+                                        {
+                                            logger.debug("Some Problem in Updating the Provision value");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if(updateDiscovery(deviceId.getString("id"),false).succeeded())
                                         {
                                             logger.debug("Discovery Table Updated with Provision value");
                                         }
@@ -979,7 +992,7 @@ public class DatabaseVerticle extends AbstractVerticle
         return promise.future();
     }
 
-    private Future<Boolean> updateDiscovery(String deviceID)
+    private Future<Boolean> updateDiscovery(String deviceID,boolean answer)
     {
         Promise<Boolean> promise = Promise.promise();
 
@@ -993,7 +1006,7 @@ public class DatabaseVerticle extends AbstractVerticle
 
                 HashMap<String, Object> data = new HashMap<>();
 
-                data.put("PROVISION",true);
+                data.put("PROVISION",answer);
 
                 String whereClause = "DEVICEID = " + Integer.valueOf(deviceID);
 
