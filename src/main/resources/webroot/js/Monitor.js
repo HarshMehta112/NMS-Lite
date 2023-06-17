@@ -1,9 +1,5 @@
 $(function (){monitormain.onload()})
 
-var bar;
-
-var pie;
-
 var monitormain = {
 
     onload: function ()
@@ -19,17 +15,12 @@ var monitormain = {
         genericAjaxCall.ajaxpost(request);
     },
 
-    close: function ()
-    {
-        $("#monitorModal").close();
-    },
-
     info : function (event) {
 
 
-        var a = $(event.target);
+        var events = $(event.target);
 
-        var row = a.closest("tr")
+        var row = events.closest("tr")
 
         var id = row.find("td:nth-child(1)").text();
 
@@ -42,9 +33,9 @@ var monitormain = {
 
     deletemonitor: function (event)
     {
-        var a = $(event.target);
+        var events = $(event.target);
 
-        var row = a.closest("tr")
+        var row = events.closest("tr")
 
         var id = {"id":row.find("td:nth-child(1)").text()};
 
@@ -56,9 +47,15 @@ var monitormain = {
 
             data: JSON.stringify(id),
 
-            success:toastr.success("discovery device deleted successfully")
         };
-        genericAjaxCall.ajaxpost(request);
+
+        if(confirm("Are you confirm to delete Monitor device"))
+        {
+            genericAjaxCall.ajaxpost(request);
+
+            toastr.success("Monitor device deleted successfully")
+
+        }
         monitormain.onload();
     },
 
@@ -86,6 +83,7 @@ var monitorcallback = {
     onload: function (data)
     {
         $("#monitors").dataTable().fnClearTable();
+
         table = $('#monitors').DataTable({lengthMenu: [10, 20, 50, 100, 200, 500],destroy:true,"bDestroy": true});
 
         monitorhelper.adddata(data);

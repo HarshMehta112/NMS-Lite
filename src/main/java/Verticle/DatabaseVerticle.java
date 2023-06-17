@@ -4,9 +4,7 @@ import Utils.Constants;
 import Utils.UserConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
+import io.vertx.core.*;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -36,7 +34,18 @@ public class DatabaseVerticle extends AbstractVerticle
 
         connectionPool.setPassword(PropertiesFile.getPASSWORD());
 
-        connectionPool.createConnectionPool();
+        if(!connectionPool.createConnectionPool())
+        {
+            Runtime.getRuntime().addShutdownHook(new Thread()
+            {
+                public void run()
+                {
+                    logger.debug("Shutdown Hook is running !");
+
+                    connectionPool.closeAllConnections();
+                }
+            });
+        }
 
     }
 
@@ -44,278 +53,272 @@ public class DatabaseVerticle extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
-
-        if(connectionPool.createConnectionPool()==false)
-        {
-
-        }
-
         eventBus = vertx.eventBus();
 
         eventBus.localConsumer(Constants.DATABASE_CONSUMER).handler(message->
         {
-           JsonObject receivedJsonObject = (JsonObject) message.body();
+            JsonObject receivedJsonObject = (JsonObject) message.body();
 
-           switch (receivedJsonObject.getString("RequestFrom"))
-           {
-               case Constants.ADD_DISCOVERY_DEVICE:
-               {
-                   JsonObject deviceDetails = (JsonObject) message.body();
+            switch (receivedJsonObject.getString("RequestFrom"))
+            {
+                case Constants.ADD_DISCOVERY_DEVICE:
+                {
+                    JsonObject deviceDetails = (JsonObject) message.body();
 
-                   vertx.executeBlocking(blockingHandler->
-                   {
-                       if(AddDevice(deviceDetails).succeeded())
-                       {
-                           message.reply("Discovery Device added in Database");
+                    vertx.executeBlocking(blockingHandler->
+                    {
+                        if(AddDevice(deviceDetails).succeeded())
+                        {
+                            message.reply("Discovery Device added in Database");
 
-                           logger.debug("Discovery Device added in Database");
-                       }
-                       else
-                       {
-                           message.reply("Some issue in adding Discovery Device in Database");
+                            logger.debug("Discovery Device added in Database");
+                        }
+                        else
+                        {
+                            message.reply("Some issue in adding Discovery Device in Database");
 
-                           logger.error("Some issue in adding Discovery Device in Database");
-                       }
-                   },false);
-                   break;
-               }
+                            logger.error("Some issue in adding Discovery Device in Database");
+                        }
+                    },false);
+                    break;
+                }
 
-               case Constants.LOAD_MONITOR_DEVICE:
-               {
-                   vertx.executeBlocking(blockingHandler->
-                   {
-                       loadMonitorData().onComplete(result->
-                       {
-                           if(loadMonitorData().succeeded())
-                           {
-                               logger.debug("Monitor Page Loading data "+loadMonitorData().result());
+                case Constants.LOAD_MONITOR_DEVICE:
+                {
+                    vertx.executeBlocking(blockingHandler->
+                    {
+                        loadMonitorData().onComplete(result->
+                        {
+                            if(loadMonitorData().succeeded())
+                            {
+                                logger.debug("Monitor Page Loading data "+loadMonitorData().result());
 
-                               message.reply(new JsonArray(loadMonitorData().result()));
-                           }
-                           else
-                           {
-                               message.reply("Enable to fetch the Monitor Data from Database");
+                                message.reply(new JsonArray(loadMonitorData().result()));
+                            }
+                            else
+                            {
+                                message.reply("Enable to fetch the Monitor Data from Database");
 
-                               logger.error("Enable to fetch the Monitor Data from Database");
-                           }
-                       });
-                   },false);
+                                logger.error("Enable to fetch the Monitor Data from Database");
+                            }
+                        });
+                    },false);
 
-                   break;
-               }
+                    break;
+                }
 
-               case Constants.GET_ALL_DISCOVERY_DEVICE:
-               {
-                   vertx.executeBlocking(blockingHandler->
-                   {
-                       loadDiscoveryData().onComplete(result->
-                       {
-                           if(loadDiscoveryData().succeeded())
-                           {
-                               message.reply(new JsonArray(loadDiscoveryData().result()));
-                           }
-                           else
-                           {
-                               message.reply("Enable to fetch the Discovery Data from Database");
+                case Constants.GET_ALL_DISCOVERY_DEVICE:
+                {
+                    vertx.executeBlocking(blockingHandler->
+                    {
+                        loadDiscoveryData().onComplete(result->
+                        {
+                            if(loadDiscoveryData().succeeded())
+                            {
+                                message.reply(new JsonArray(loadDiscoveryData().result()));
+                            }
+                            else
+                            {
+                                message.reply("Enable to fetch the Discovery Data from Database");
 
-                               logger.error("Enable to fetch the Discovery Data from Database");
-                           }
-                       });
-                   },false);
+                                logger.error("Enable to fetch the Discovery Data from Database");
+                            }
+                        });
+                    },false);
 
-                   break;
-               }
+                    break;
+                }
 
-               case Constants.DELETE_DISCOVERY_DEVICE:
-               {
-                   vertx.executeBlocking(blockingHandler->
-                   {
-                       JsonObject deviceId = (JsonObject) message.body();
+                case Constants.DELETE_DISCOVERY_DEVICE:
+                {
+                    vertx.executeBlocking(blockingHandler->
+                    {
+                        JsonObject deviceId = (JsonObject) message.body();
 
-                       DeleteDevice(deviceId.getString("id")).onComplete(result->
-                       {
-                           if(DeleteDevice(deviceId.getString("id")).succeeded())
-                           {
-                               message.reply("Device deleted successfully");
+                        DeleteDevice(deviceId.getString("id")).onComplete(result->
+                        {
+                            if(DeleteDevice(deviceId.getString("id")).succeeded())
+                            {
+                                message.reply("Device deleted successfully");
 
-                               logger.debug("Device deleted successfully");
-                           }
-                           else
-                           {
-                               logger.error("Enbale to delete discovery Device");
+                                logger.debug("Device deleted successfully");
+                            }
+                            else
+                            {
+                                logger.error("Enbale to delete discovery Device");
 
-                               message.reply("Enbale to delete discovery Device");
-                           }
-                       });
-                   },false);
-                   break;
-               }
+                                message.reply("Enbale to delete discovery Device");
+                            }
+                        });
+                    },false);
+                    break;
+                }
 
-               case Constants.DELETE_MONITOR_DEVICE:
-               {
-                   vertx.executeBlocking(blockingHandler->
-                   {
-                       JsonObject deviceId = new JsonObject();
+                case Constants.DELETE_MONITOR_DEVICE:
+                {
+                    vertx.executeBlocking(blockingHandler->
+                    {
+                        JsonObject deviceId = (JsonObject) message.body();
 
-                       deleteMonitorDevice(deviceId.getString("id")).onComplete(result->
-                       {
-                           if(deleteMonitorDevice(deviceId.getString("id")).succeeded())
-                           {
-                               message.reply("Monitor Device deleted successfully");
+                        deleteMonitorDevice(deviceId.getString("id")).onComplete(result->
+                        {
+                            if(deleteMonitorDevice(deviceId.getString("id")).succeeded())
+                            {
+                                message.reply("Monitor Device deleted successfully");
 
-                               logger.debug("Monitor Device deleted successfully");
-                           }
-                           else
-                           {
-                               message.reply("Enbale to delete Monitor Device");
+                                logger.debug("Monitor Device deleted successfully");
+                            }
+                            else
+                            {
+                                message.reply("Enbale to delete Monitor Device");
 
-                               logger.debug("Enbale to delete Monitor Device");
-                           }
-                       });
-                   },false);
-                   break;
-               }
+                                logger.debug("Enbale to delete Monitor Device");
+                            }
+                        });
+                    },false);
+                    break;
+                }
 
-               case Constants.RUN_DISCOVERY:
-               {
-                   vertx.executeBlocking(blockingHandler->
-                   {
-                       JsonObject deviceId = (JsonObject) message.body();
+                case Constants.RUN_DISCOVERY:
+                {
+                    vertx.executeBlocking(blockingHandler->
+                    {
+                        JsonObject deviceId = (JsonObject) message.body();
 
-                       fetchDiscoveryDatabyID(deviceId.getString("id")).onComplete(result->
-                       {
-                           eventBus.request(Constants.RUN_DISCOVERY_SPAWN_PEROCESS,fetchDiscoveryDatabyID(deviceId.getString("id")).result(),response->
-                           {
-                                   if(response.succeeded())
-                               {
-                                   if(!deviceId.getString("id").equals(""))
-                                   {
-                                       logger.debug("Device Id of discovery device "+deviceId.getString("id"));
+                        fetchDiscoveryDatabyID(deviceId.getString("id")).onComplete(result->
+                        {
+                            eventBus.request(Constants.RUN_DISCOVERY_SPAWN_PEROCESS,fetchDiscoveryDatabyID(deviceId.getString("id")).result(),response->
+                            {
+                                if(response.succeeded())
+                                {
+                                    if(!deviceId.getString("id").equals(""))
+                                    {
+                                        logger.debug("Device Id of discovery device "+deviceId.getString("id"));
 
-                                       if(updateDiscovery(deviceId.getString("id")).succeeded())
-                                       {
-                                           logger.debug("Discovery Table Updated with Provision value");
-                                       }
-                                       else
-                                       {
-                                           logger.debug("Some Problem in Updating the Provision value");
-                                       }
-                                   }
-                               }
-                               else
-                               {
-                                   logger.debug("Some error in getting the output from .exe file");
-                               }
-                           });
+                                        if(updateDiscovery(deviceId.getString("id")).succeeded())
+                                        {
+                                            logger.debug("Discovery Table Updated with Provision value");
+                                        }
+                                        else
+                                        {
+                                            logger.debug("Some Problem in Updating the Provision value");
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    logger.debug("Some error in getting the output from .exe file");
+                                }
+                            });
 
-                           if(fetchDiscoveryDatabyID(deviceId.getString("id")).succeeded())
-                           {
-                               message.reply("Device discovered successfully");
+                            if(fetchDiscoveryDatabyID(deviceId.getString("id")).succeeded())
+                            {
+                                message.reply("Device discovered successfully");
 
-                               logger.debug("Device discovered successfully");
-                           }
-                           else
-                           {
-                               message.reply("Device not discovered");
+                                logger.debug("Device discovered successfully");
+                            }
+                            else
+                            {
+                                message.reply("Device not discovered");
 
-                               logger.debug("Device not discovered");
-                           }
-                       });
-                   },false);
-                   break;
-               }
+                                logger.debug("Device not discovered");
+                            }
+                        });
+                    },false);
+                    break;
+                }
 
-               case Constants.RUN_PROVISION:
-               {
-                   vertx.executeBlocking(blockingHandler->
-                   {
-                       JsonObject deviceId = (JsonObject) message.body();
+                case Constants.RUN_PROVISION:
+                {
+                    vertx.executeBlocking(blockingHandler->
+                    {
+                        JsonObject deviceId = (JsonObject) message.body();
 
-                       fetchDiscoveryDatabyID(deviceId.getString("id")).onComplete(result->
-                       {
-                           JsonObject data = result.result();
+                        fetchDiscoveryDatabyID(deviceId.getString("id")).onComplete(result->
+                        {
+                            JsonObject data = result.result();
 
-                           logger.debug("JSON result of RUN PROVISION "+data);
+                            logger.debug("JSON result of RUN PROVISION "+data);
 
-                           provisionedDeviceDataDump(data).onComplete(result1 ->
-                           {
-                               if(result1.succeeded())
-                               {
-                                   logger.debug("Discovery Device Added Succssfullly into Monitor Table");
-                               }
-                               else
-                               {
-                                   logger.debug("Some error occurred in adding discovery device into Monitor Tbale"+result1.cause().getMessage());
-                               }
-                           });
-                       });
-                   },false);
-                   break;
-               }
+                            provisionedDeviceDataDump(data).onComplete(result1 ->
+                            {
+                                if(result1.succeeded())
+                                {
+                                    logger.debug("Discovery Device Added Succssfullly into Monitor Table");
+                                }
+                                else
+                                {
+                                    logger.debug("Some error occurred in adding discovery device into Monitor Tbale"+result1.cause().getMessage());
+                                }
+                            });
+                        });
+                    },false);
+                    break;
+                }
 
-               case Constants.DASHBOARD_LOAD:
-               {
-                   vertx.executeBlocking(blockingHandler->
-                   {
-                       Promise<List<JsonArray>> promise = Promise.promise();
+                case Constants.DASHBOARD_LOAD:
+                {
+                    vertx.executeBlocking(blockingHandler->
+                    {
+                        Promise<List<JsonArray>> promise = Promise.promise();
 
-                       dashBoardDataLoad(promise);
+                        dashBoardDataLoad(promise);
 
-                       promise.future().onComplete(handlers->
-                       {
-                           eventBus.publish(Constants.DASHBOARD_DATA_EVENT_BUS_BRIDGE,handlers.result().toString());
+                        promise.future().onComplete(handlers->
+                        {
+                            eventBus.publish(Constants.DASHBOARD_DATA_EVENT_BUS_BRIDGE,handlers.result().toString());
 
-                           logger.debug("Dashboard Data published :"+handlers.result().toString());
+                            logger.debug("Dashboard Data published :"+handlers.result().toString());
 
-                       });
-                   },false);
-                   break;
-               }
+                        });
+                    },false);
+                    break;
+                }
 
-               case Constants.MONITOR_DEVICE_INFO:
-               {
-                   vertx.executeBlocking(blockingHandler->
-                   {
-                       JsonObject deviceId = (JsonObject) message.body();
+                case Constants.MONITOR_DEVICE_INFO:
+                {
+                    vertx.executeBlocking(blockingHandler->
+                    {
+                        JsonObject deviceId = (JsonObject) message.body();
 
-                       monitorDeviceInfo(deviceId.getString("id")).onComplete(result->
-                       {
-                           JsonObject resultInfo  = monitorDeviceInfo(deviceId.getString("id")).result();
+                        monitorDeviceInfo(deviceId.getString("id")).onComplete(result->
+                        {
+                            JsonObject resultInfo  = monitorDeviceInfo(deviceId.getString("id")).result();
 
-                           logger.debug("Monitor Device information "+resultInfo);
+                            logger.debug("Monitor Device information "+resultInfo);
 
-                           if(monitorDeviceInfo(deviceId.getString("id")).succeeded())
-                           {
-                               message.reply(resultInfo);
-                           }
-                       });
-                   },false);
-                   break;
-               }
+                            if(monitorDeviceInfo(deviceId.getString("id")).succeeded())
+                            {
+                                message.reply(resultInfo);
+                            }
+                        });
+                    },false);
+                    break;
+                }
 
-               case Constants.EDIT_DISCOVERY_DEVICE:
-               {
-                   JsonObject deviceDetails = (JsonObject) message.body();
+                case Constants.EDIT_DISCOVERY_DEVICE:
+                {
+                    JsonObject deviceDetails = (JsonObject) message.body();
 
-                   vertx.executeBlocking(blockingHandler->
-                   {
-                       if(EditDevice(deviceDetails).succeeded())
-                       {
-                           message.reply("Discovery Device information edited in Database");
+                    vertx.executeBlocking(blockingHandler->
+                    {
+                        if(EditDevice(deviceDetails).succeeded())
+                        {
+                            message.reply("Discovery Device information edited in Database");
 
-                           logger.debug("Discovery Device information edited in Database");
-                       }
-                       else
-                       {
-                           message.reply("Some issue in editing Discovery Device information in Database");
+                            logger.debug("Discovery Device information edited in Database");
+                        }
+                        else
+                        {
+                            message.reply("Some issue in editing Discovery Device information in Database");
 
-                           logger.debug("Some issue in editing Discovery Device information in Database");
-                       }
-                   },false);
-                   break;
-               }
+                            logger.debug("Some issue in editing Discovery Device information in Database");
+                        }
+                    },false);
+                    break;
+                }
 
-           }
+            }
         });
 
 
@@ -580,15 +583,11 @@ public class DatabaseVerticle extends AbstractVerticle
                 }
                 else
                 {
-                    promise.complete(false);
-
                     promise.fail("deleteMonitorDevice method promise failed due to delete count < 0");
                 }
             }
             else
             {
-                promise.complete(false);
-
                 promise.fail("deleteMonitorDevice method promise failed due to connection closed");
             }
         }
@@ -640,18 +639,18 @@ public class DatabaseVerticle extends AbstractVerticle
 
                     JsonObject jsonObject =  inputDataForSSHPolling.getJsonObject(0);
 
-                   if(jsonObject!=null)
-                   {
-                       jsonObject.put("category","polling");
+                    if(jsonObject!=null)
+                    {
+                        jsonObject.put("category","polling");
 
-                       inputDataForSSHPolling.remove(0);
+                        inputDataForSSHPolling.remove(0);
 
-                       inputDataForSSHPolling.add(0,jsonObject);
+                        inputDataForSSHPolling.add(0,jsonObject);
 
-                       logger.debug("Input data for SSH polling "+inputDataForSSHPolling);
+                        logger.debug("Input data for SSH polling "+inputDataForSSHPolling);
 
-                       promise.complete(inputDataForSSHPolling);
-                   }
+                        promise.complete(inputDataForSSHPolling);
+                    }
                 }
             }
             else
@@ -706,7 +705,6 @@ public class DatabaseVerticle extends AbstractVerticle
 
                     promise.complete(credentialData);
 
-                    System.out.println(credentialData);
                 }
                 else
                 {
@@ -886,23 +884,23 @@ public class DatabaseVerticle extends AbstractVerticle
 
                 List<Map<String, Object>> selectResult = operations.selectQuery(query);
 
-               if(selectResult!=null)
-               {
-                   for(int index=0;index<selectResult.size();index++)
-                   {
-                       String ip = selectResult.get(index).get("IPADDRESS").toString();
+                if(selectResult!=null)
+                {
+                    for(int index=0;index<selectResult.size();index++)
+                    {
+                        String ip = selectResult.get(index).get("IPADDRESS").toString();
 
-                       result.add(ip);
-                   }
+                        result.add(ip);
+                    }
 
-                   logger.debug("Fetched Data for Availiblity Polling "+result);
+                    logger.debug("Fetched Data for Availiblity Polling "+result);
 
-                   promise.complete(result);
-               }
-               else
-               {
-                   promise.fail("fetchDataForAvailabilityPolling method promise failed due to null data");
-               }
+                    promise.complete(result);
+                }
+                else
+                {
+                    promise.fail("fetchDataForAvailabilityPolling method promise failed due to null data");
+                }
             }
             else
             {
@@ -972,7 +970,7 @@ public class DatabaseVerticle extends AbstractVerticle
         {
             promise.complete(false);
 
-           logger.error(exception.getCause().getMessage());
+            logger.error(exception.getCause().getMessage());
         }
         finally
         {

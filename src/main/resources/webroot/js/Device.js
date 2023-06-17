@@ -1,9 +1,10 @@
 var devicemain = {
+
     onload: function (id){
 
         // $('#monitorbody').load("./Device.html");
 
-        $('#monitorbody').html('<div class="box-container"><div class="box box1"><div class="text"><h2 id="hostname" class="topic-heading">--</h2><h3 class="topic">Hostname</h3></div></div><div class="box box2"><div class="text"><h2 id="disk" class="topic-heading">--</h2><h3 class="topic">Disk Used(%)</h3></div></div><div class="box box3"><div class="text"><h2 id="memory" class="topic-heading">--</h2><h3 class="topic">Memory Used(%)</h3></div></div><div class="box box4"><div class="text"><h2 id="cpu" class="topic-heading">--</h2><h3 class="topic">CPU Used(%)</h3></div></div><div class="box box5"><div class="text"><h2 id="uptime" class="topic-heading">--</h2><h3 class="topic">Uptime</h3></div></div></div>')
+        $('#monitorbody').html('<div class="box-container"><div class="box box1"><div class="text"><h2 id="hostname" class="topic-heading">--</h2><h3 class="topic">Hostname</h3></div></div><div class="box box1"><div class="text"><h2 id="disk" class="topic-heading">--</h2><h3 class="topic">Disk Used(%)</h3></div></div><div class="box box1"><div class="text"><h2 id="memory" class="topic-heading">--</h2><h3 class="topic">Memory Used(%)</h3></div></div><div class="box box1"><div class="text"><h2 id="cpu" class="topic-heading">--</h2><h3 class="topic">CPU Used(%)</h3></div></div><div class="box box1"><div class="text"><h2 id="uptime" class="topic-heading">--</h2><h3 class="topic">Uptime</h3></div></div></div>')
 
         console.log(id)
 
@@ -27,21 +28,21 @@ devicehelper =
 {
     updateDevicePage : function (data)
     {
-        // window.location.href = "Device.html"
-
         data = JSON.parse(data)
 
         console.log('update device pae'+data)
 
-        document.getElementById("disk").innerHTML =data['disk.used.percentage'];
+        //TODO use jquery
 
-        document.getElementById("uptime").innerHTML =data['uptime'];
+        $("#disk").html(data['disk.used.percentage'])
 
-        document.getElementById("hostname").innerHTML =data['system.name'];
+        $("#uptime").html(data['uptime'])
 
-        document.getElementById("cpu").innerHTML =data['cpu.user.percentage'];
+        $("#hostname").html(data['system.name']);
 
-        document.getElementById("memory").innerHTML =data['memory.used.percentage'];
+        $("#cpu").html(data['cpu.user.percentage']);
+
+        $("#memory").html(data['memory.used.percentage']);
 
 
     }

@@ -18,6 +18,7 @@ var discoverymain = {
         let param = $('#monitor').serializeArray().reduce(function (finalParam, currentValue)
         {
             finalParam[currentValue.name] = currentValue.value;
+
             return finalParam;
         }, {})
 
@@ -78,9 +79,9 @@ var discoverymain = {
 
     deletemonitor: function (event)
     {
-        var a = $(event.target);
+        var events = $(event.target);
 
-        var row = a.closest("tr")
+        var row = events.closest("tr")
 
         var id = {"id":row.find("td:nth-child(1)").text()};
 
@@ -92,16 +93,21 @@ var discoverymain = {
 
             callback: discoverycallback.deletemonitor,
 
-            success:toastr.success("discovery device deleted successfully")
         };
-        genericAjaxCall.ajaxpost(request);
+
+        if(confirm("Are you confirm to delete discovery device"))
+        {
+            genericAjaxCall.ajaxpost(request);
+
+            toastr.success("discovery device deleted successfully")
+        }
         discoverymain.onload();
     },
 
     discover: function (event){
-        var a = $(event.target);
+        var events= $(event.target);
 
-        var row = a.closest("tr")
+        var row = events.closest("tr")
 
         var id = {"id":row.find("td:nth-child(1)").text()};
 
@@ -125,10 +131,11 @@ var discoverymain = {
     },
 
 
-    provision: function (event){
-        var a = $(event.target);
+    provision: function (event)
+    {
+        var evnts = $(event.target);
 
-        var row = a.closest("tr")
+        var row = evnts.closest("tr")
 
         var id = {"id":row.find("td:nth-child(1)").text()};
 
@@ -186,11 +193,13 @@ var discoveryhelper = {
         if (name == "")
         {
             discoveryhelper.customalert(".failure", "Enter Valid Name");
+
             return false;
         }
         if (ip == "")
         {
             discoveryhelper.customalert(".failure", "Enter IP");
+
             return false;
         }
 
@@ -198,6 +207,7 @@ var discoveryhelper = {
         if (type != "ping" && (username == "" || password == ""))
         {
             discoveryhelper.customalert(".failure", "Enter Username & Password");
+
             return false;
         }
         return true;

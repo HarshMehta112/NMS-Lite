@@ -36,18 +36,18 @@ public class BootStrap
     public static void main(String[] args)
     {
         CompositeFuture.all(vertx.deployVerticle(DatabaseVerticle.class.getName()),
-                            vertx.deployVerticle(PublicAPIVerticle.class.getName()),
-                            vertx.deployVerticle(DiscoveryEngine.class.getName()),
-                            vertx.deployVerticle(PollingEngine.class.getName())).onComplete(compositeFutureAsyncResult ->
+                vertx.deployVerticle(PublicAPIVerticle.class.getName()),
+                vertx.deployVerticle(DiscoveryEngine.class.getName()),
+                vertx.deployVerticle(PollingEngine.class.getName())).onComplete(compositeFutureAsyncResult ->
         {
-           if(compositeFutureAsyncResult.succeeded())
-           {
-               logger.debug("All verticles are deployed successfully");
-           }
-           else
-           {
+            if(compositeFutureAsyncResult.succeeded())
+            {
+                logger.debug("All verticles are deployed successfully");
+            }
+            else
+            {
                 closeVertxInstance();
-           }
+            }
         });
 
 

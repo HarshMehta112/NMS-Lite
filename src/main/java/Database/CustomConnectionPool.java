@@ -91,10 +91,7 @@ public class CustomConnectionPool
                 }
             }
         }
-        else
-        {
-            throw new RuntimeException("Please enter pool size appropriately");
-        }
+
         return true;
     }
 

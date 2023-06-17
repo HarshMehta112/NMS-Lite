@@ -27,8 +27,6 @@ public class DiscoveryEngine extends AbstractVerticle
         {
             JsonObject deviceDetails = (JsonObject) handler.body();
 
-            System.out.println(deviceDetails);
-
             deviceDetails.put("category","discovery");
 
             logger.debug("Discovery Device Details "+deviceDetails);

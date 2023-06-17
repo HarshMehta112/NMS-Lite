@@ -1,6 +1,7 @@
 $(document).ready(function() {
 
-    setTimeout(dashboardmain.onload(),2000)
+    //TODO onload when login
+    setTimeout(dashboardmain.onload(),1000)
 });
 
 
@@ -31,20 +32,16 @@ $(function() {
               }
               else if(jsonarray[0].hasOwnProperty("UP"))
               {
-                  console.log(jsonarray[0]["UP"])
+                  console.log(jsonarray[0]["UP"]);
 
-                  document.getElementById("up").innerHTML = jsonarray[0]["UP"]
+                  $("#up").html(jsonarray[0]["UP"]);
 
-                  document.getElementById("down").innerHTML = jsonarray[0]["DOWN"]
+                  $("#down").html(jsonarray[0]["DOWN"]);
 
-                  document.getElementById("total").innerHTML = jsonarray[0]["UP"] + jsonarray[0]["DOWN"]
-
-
+                  $("#total").html(jsonarray[0]["UP"] + jsonarray[0]["DOWN"]);
               }
 
             })
-
-
 
         });
     }
