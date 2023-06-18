@@ -6,8 +6,10 @@ import Utils.UserConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +52,7 @@ public class PollingEngine extends AbstractVerticle
 
                         if(entry.getKey().equals("sshPolling"))
                         {
-                            eventBus.<JsonArray>request(Constants.SSH_POLLING_PROCESS_TRIGGERED,"", response->
+                            eventBus.<JsonArray>request(Constants.DATABASE_CONSUMER,new JsonObject().put("RequestFrom",Constants.SSH_POLLING_PROCESS_TRIGGERED), response->
                             {
                                 if(response.succeeded())
                                 {
@@ -68,6 +70,7 @@ public class PollingEngine extends AbstractVerticle
                                             }
                                             else
                                             {
+                                                logger.debug(result.cause().getMessage());
                                                 logger.debug("Some error in dumping the ssh polling data into Database");
                                             }
                                         });
@@ -83,7 +86,7 @@ public class PollingEngine extends AbstractVerticle
                         {
                             // trigger the task for fping
 
-                            eventBus.<ArrayList>request(Constants.AVAILABILITY_POLLING_PROCESS_TRIGGERED,"",response->
+                            eventBus.<ArrayList>request(Constants.DATABASE_CONSUMER,new JsonObject().put("RequestFrom",Constants.AVAILABILITY_POLLING_PROCESS_TRIGGERED),response->
                             {
                                 if(response.succeeded())
                                 {

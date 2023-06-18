@@ -329,50 +329,51 @@ public class DatabaseVerticle extends AbstractVerticle
                     break;
                 }
 
+                case Constants.SSH_POLLING_PROCESS_TRIGGERED:
+                {
+                    vertx.executeBlocking(blockingHandler->
+                    {
+                        fetchMonitorData().onComplete(result->
+                        {
+                            if(fetchMonitorData().succeeded())
+                            {
+                                JsonArray fetchDataFromMonitorTable = fetchMonitorData().result();
+
+                                logger.debug("SSH polling exe file input data "+fetchDataFromMonitorTable);
+
+                                message.reply(fetchDataFromMonitorTable);
+                            }
+                            else
+                            {
+                                logger.error("Enable to fetch the Discovery Data from Database for ssh polling");
+
+                                message.reply("Enable to fetch the Discovery Data from Database for ssh polling");
+                            }
+                        });
+                    },false);
+                    break;
+                }
+
+                case Constants.AVAILABILITY_POLLING_PROCESS_TRIGGERED:
+                {
+                    vertx.executeBlocking(blockingHandler->
+                    {
+                        fetchDataForAvailabilityPolling().onComplete(arrayListAsyncResult ->
+                        {
+                            if(fetchDataForAvailabilityPolling().succeeded())
+                            {
+                                message.reply(fetchDataForAvailabilityPolling().result());
+                            }
+                            else
+                            {
+                                message.reply("Enable to fetch the Discovery Data from Database for availibaliy polling");
+                            }
+                        });
+                    },false);
+                    break;
+                }
+
             }
-        });
-
-
-        eventBus.localConsumer(Constants.SSH_POLLING_PROCESS_TRIGGERED,handler->
-        {
-            vertx.executeBlocking(blockingHandler->
-            {
-                fetchMonitorData().onComplete(result->
-                {
-                    if(fetchMonitorData().succeeded())
-                    {
-                        JsonArray fetchDataFromMonitorTable = fetchMonitorData().result();
-
-                        logger.debug("SSH polling exe file input data "+fetchDataFromMonitorTable);
-
-                        handler.reply(fetchDataFromMonitorTable);
-                    }
-                    else
-                    {
-                        logger.error("Enable to fetch the Discovery Data from Database for ssh polling");
-
-                        handler.reply("Enable to fetch the Discovery Data from Database for ssh polling");
-                    }
-                });
-            },false);
-        });
-
-        eventBus.localConsumer(Constants.AVAILABILITY_POLLING_PROCESS_TRIGGERED,handler->
-        {
-            vertx.executeBlocking(blockingHandler->
-            {
-                fetchDataForAvailabilityPolling().onComplete(arrayListAsyncResult ->
-                {
-                    if(fetchDataForAvailabilityPolling().succeeded())
-                    {
-                        handler.reply(fetchDataForAvailabilityPolling().result());
-                    }
-                    else
-                    {
-                        handler.reply("Enable to fetch the Discovery Data from Database for availibaliy polling");
-                    }
-                });
-            },false);
         });
 
 

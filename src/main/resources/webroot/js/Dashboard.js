@@ -1,7 +1,6 @@
 $(document).ready(function() {
 
-    //TODO onload when login
-    setTimeout(dashboardmain.onload(),1000)
+    dashboardmain.onload();
 });
 
 
@@ -49,15 +48,6 @@ $(function() {
 
 var dashboardmain = {
 
-    logout : function () {
-        let request = {
-
-            url: "logout",
-
-        };
-        genericAjaxCall.ajaxpost(request);
-    },
-
     updateTableData : function (data,metricType,table)
     {
         $("#"+table).dataTable().fnClearTable();
@@ -65,14 +55,14 @@ var dashboardmain = {
         console.log(metricType)
 
         let dataTable = $("#"+table).DataTable({
-            searching: false, paging: false, info: false,destroy:true,"bDestroy": true,
+            searching: false, paging: false, info: false,destroy:true,
 
             data: data,
             columns: [
                 {data: 'IPADDRESS'},
                 {targets:1 , data: metricType}
             ],
-            order: [[1, 'Desc']],
+            order: [[1, 'desc']],
         });
 },
 

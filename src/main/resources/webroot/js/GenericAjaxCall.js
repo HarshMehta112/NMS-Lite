@@ -13,8 +13,6 @@ var genericAjaxCall={
             {
                 let callbacks;
 
-                // getData(data);
-
                 if(request.callback!==undefined)
                 {
                     callbacks = $.Callbacks();
@@ -27,24 +25,25 @@ var genericAjaxCall={
                 }
 
             },
-            error : function ()
-            {
-                toastr.info("some error occurred");
-            },
             timeout: 15000
         });
     },
         ajaxget: function ajaxCall (result){
         $.ajax({
             type:result.type,
+
             url:result.url,
+
             data: result.data,
+
             dataType: result.dataType,
+
             success: function (data){
                 if(result.hasOwnProperty('callback')){
                     result.callback(data);
                 }
-            }
+            },
+            timeout: 15000
         });
 
     }

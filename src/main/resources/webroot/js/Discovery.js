@@ -265,7 +265,7 @@ var discoverycallback = {
     onload: function (data)
     {
         $("#monitors").dataTable().fnClearTable();
-        table = $('#monitors').DataTable({lengthMenu: [3, 5, 10, 20, 50, 100, 200, 500],destroy:true,"bDestroy": true});
+        table = $('#monitors').DataTable({lengthMenu: [10, 20, 50, 100, 200, 500],destroy:true});
 
         discoveryhelper.adddata(data, table);
     },

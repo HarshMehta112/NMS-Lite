@@ -1,5 +1,6 @@
 package Verticle;
 
+import Utils.UserConfig;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.buffer.Buffer;
@@ -83,7 +84,6 @@ public class PublicAPIVerticle extends AbstractVerticle
 
                         routingContext.response().setStatusCode(200).end(response.result().body().encodePrettily());
                     }
-                    //migrate into one method
                     else
                     {
                         logger.debug("Some Problem in loading Monitor Devices");
@@ -201,7 +201,7 @@ public class PublicAPIVerticle extends AbstractVerticle
                     }
                     else
                     {
-                        routingContext.response().end("Some error occurred on loadinf device information");
+                        routingContext.response().end("Some error occurred on loading device information");
                     }
                 });
             });
@@ -236,11 +236,11 @@ public class PublicAPIVerticle extends AbstractVerticle
 
             router.mountSubRouter("/login/eventbus",jsHandler.bridge(bridgeOptions));
 
-            router.route("/login/logout").handler(context -> {
+            router.route("/logout").handler(context -> {
 
                 context.clearUser();
 
-                context.response().putHeader("location", "/login").setStatusCode(302).end();
+                context.redirect("login.html");
             });
         }
         catch (Exception exception)
@@ -252,7 +252,7 @@ public class PublicAPIVerticle extends AbstractVerticle
         {
             vertx.createHttpServer(new HttpServerOptions().setSsl(true).setKeyStoreOptions(new JksOptions().setPath(
                             Constants.SSL_KEYSTORE_PATH).setPassword(Constants.SSL_PASSWORD)))
-                    .requestHandler(router).listen(8080).onComplete(ready ->
+                    .requestHandler(router).listen(UserConfig.HTTP_PORT).onComplete(ready ->
                     {
                         if(ready.succeeded())
                         {
@@ -260,7 +260,7 @@ public class PublicAPIVerticle extends AbstractVerticle
                         }
                         else
                         {
-                            startPromise.fail(ready.cause());
+                            startPromise.fail(ready.cause().getMessage());
 
                             logger.debug("some error occurred with server" + ready.cause().getMessage());
                         }
