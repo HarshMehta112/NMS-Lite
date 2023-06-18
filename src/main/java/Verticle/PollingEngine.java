@@ -52,7 +52,7 @@ public class PollingEngine extends AbstractVerticle
 
                         if(entry.getKey().equals("sshPolling"))
                         {
-                            eventBus.<JsonArray>request(Constants.DATABASE_CONSUMER,new JsonObject().put("RequestFrom",Constants.SSH_POLLING_PROCESS_TRIGGERED), response->
+                            eventBus.<JsonArray>request(Constants.DATABASE_CONSUMER,new JsonObject().put("RequestFrom",Constants.SSH_POLLING_PROCESS_TRIGGERED),new DeliveryOptions().setSendTimeout(60000), response->
                             {
                                 if(response.succeeded())
                                 {
@@ -70,7 +70,6 @@ public class PollingEngine extends AbstractVerticle
                                             }
                                             else
                                             {
-                                                logger.debug(result.cause().getMessage());
                                                 logger.debug("Some error in dumping the ssh polling data into Database");
                                             }
                                         });
