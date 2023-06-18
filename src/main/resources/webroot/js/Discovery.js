@@ -121,7 +121,7 @@ var discoverymain = {
 
             success:toastr.success(ip,"discovery started successfully"),
 
-            callback: location.reload,
+            callback: location.reload
 
         };
         genericAjaxCall.ajaxpost(request);
@@ -190,13 +190,13 @@ var discoveryhelper = {
 
     validate: function (name, ip, type, username, password)
     {
-        if (name == "")
+        if (name === "")
         {
             discoveryhelper.customalert(".failure", "Enter Valid Name");
 
             return false;
         }
-        if (ip == "")
+        if (ip === "")
         {
             discoveryhelper.customalert(".failure", "Enter IP");
 
@@ -204,7 +204,7 @@ var discoveryhelper = {
         }
 
 
-        if (type != "ping" && (username == "" || password == ""))
+        if (type !== "ping" && (username === "" || password === ""))
         {
             discoveryhelper.customalert(".failure", "Enter Username & Password");
 
@@ -215,11 +215,11 @@ var discoveryhelper = {
 
     showssh: function ()
     {
-        if ($("#updatetype").val() == "ssh")
+        if ($("#updatetype").val() === "ssh")
         {
             $("#updatesshdivision").show();
 
-        } else if ($("#type").val() == "ssh")
+        } else if ($("#type").val() === "ssh")
         {
             $("#sshdivision").show();
 
@@ -304,7 +304,7 @@ var discoverycallback = {
 
         $("#updatetype").val(type);
 
-        if (type == "ssh")
+        if (type === "ssh")
         {
             $("#updatesshdivision").show();
 

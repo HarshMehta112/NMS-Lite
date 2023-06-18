@@ -191,8 +191,6 @@ public class DatabaseVerticle extends AbstractVerticle
                             {
                                 if(response.succeeded())
                                 {
-                                    System.out.println(response.result().body());
-
                                     if(response.result().body().equals("true"))
                                     {
                                         logger.debug("Device Id of discovery device "+deviceId.getString("id"));

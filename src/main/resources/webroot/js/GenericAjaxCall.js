@@ -41,9 +41,7 @@ var genericAjaxCall={
             data: result.data,
             dataType: result.dataType,
             success: function (data){
-                console.log(data)
                 if(result.hasOwnProperty('callback')){
-                    console.log(result.callback)
                     result.callback(data);
                 }
             }

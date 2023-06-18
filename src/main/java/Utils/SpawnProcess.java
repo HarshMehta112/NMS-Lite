@@ -82,9 +82,15 @@ public class SpawnProcess
         {
            try
            {
-               reader.close();
+               if(reader!=null)
+               {
+                   reader.close();
+               }
 
-               process.destroy();
+               if(process!=null)
+               {
+                   process.destroy();
+               }
            }
            catch (Exception exception)
            {
