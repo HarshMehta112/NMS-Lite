@@ -10,11 +10,15 @@ public class UserConfig
 
     public static final int AVAILIBILITY_POLLING_TIME = 2*60*1000;
 
-    public static final int SSH_POLLING_TIME = 5*60*100;
+    public static final int SSH_POLLING_TIME = 1*60*1000;
 
-    public static final int SCHEDULER_DELAY = 1000*6;
+    public static final int SCHEDULER_DELAY = 1000*60;
 
-    public static final int DASHBOARD_REFRESH_DELAY = 5000;
+    public static final int DASHBOARD_REFRESH_DELAY = 2*60*1000;
 
     public static final int HTTP_PORT = 8080;
+
+    public static final int SESSION_TIMEOUT = 20*60*1000;
+
+    public static final int SEND_TIMEOUT = 60000;
 }

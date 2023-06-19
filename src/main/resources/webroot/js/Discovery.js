@@ -51,6 +51,7 @@ var discoverymain = {
         let param = $('form').serializeArray().reduce(function (finalParam, currentValue)
         {
             finalParam[currentValue.name] = currentValue.value;
+
             return finalParam;
         }, {});
 
@@ -278,15 +279,15 @@ var discoverycallback = {
 
         console.log(a)
 
-        var row = a.closest("tr")
+        let row = a.closest("tr")
 
-        var beforeEditid = row.find("td:nth-child(1)").text();
+        let beforeEditid = row.find("td:nth-child(1)").text();
 
-        var beforeEditname = row.find("td:nth-child(2)").text();
+        let beforeEditname = row.find("td:nth-child(2)").text();
 
-        var beforeEditip = row.find("td:nth-child(3)").text();
+        let beforeEditip = row.find("td:nth-child(3)").text();
 
-        var beforeEdittype = row.find("td:nth-child(4)").text();
+        let beforeEdittype = row.find("td:nth-child(4)").text();
 
         let id = beforeEditid;
 

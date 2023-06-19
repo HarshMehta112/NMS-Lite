@@ -39,7 +39,7 @@ public class PublicAPIVerticle extends AbstractVerticle
         {
             router.route().handler(BodyHandler.create());
 
-            router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)).setSessionTimeout(30000));
+            router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)).setSessionTimeout(UserConfig.SESSION_TIMEOUT));
 
             PropertyFileAuthentication authentication = PropertyFileAuthentication.create(vertx, Constants.PROPERTY_FILE_PATH);
 

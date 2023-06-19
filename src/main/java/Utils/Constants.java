@@ -3,6 +3,7 @@ package Utils;
 public class Constants {
     public static final String PROPERTY_FILE_PATH = "/root/IdeaProjects/Motadata/src/main/resources/webroot/user.properties";
 
+    //Current Directory
     public static final String SSL_KEYSTORE_PATH = "/root/IdeaProjects/Motadata/src/main/resources/server-keystore.jks";
 
     public static final String SSL_PASSWORD = "harshmehta";

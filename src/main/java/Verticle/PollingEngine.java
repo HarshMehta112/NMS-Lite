@@ -52,9 +52,9 @@ public class PollingEngine extends AbstractVerticle
 
                         if(entry.getKey().equals("sshPolling"))
                         {
-                            eventBus.<JsonArray>request(Constants.DATABASE_CONSUMER,new JsonObject().put("RequestFrom",Constants.SSH_POLLING_PROCESS_TRIGGERED),new DeliveryOptions().setSendTimeout(60000), response->
+                            eventBus.<JsonArray>request(Constants.DATABASE_CONSUMER,new JsonObject().put("RequestFrom",Constants.SSH_POLLING_PROCESS_TRIGGERED), response->
                             {
-                                if(response.succeeded())
+                                if(response.succeeded() && response.result().body()!=null)
                                 {
                                     vertx.executeBlocking(handlers->
                                     {
@@ -70,14 +70,14 @@ public class PollingEngine extends AbstractVerticle
                                             }
                                             else
                                             {
-                                                logger.debug("Some error in dumping the ssh polling data into Database");
+                                                logger.error("Some error in dumping the ssh polling data into Database");
                                             }
                                         });
                                     });
                                 }
                                 else
                                 {
-                                    logger.debug("Some Problem in loading Discovery Devices");
+                                    logger.error("Some Problem in loading Discovery Devices");
                                 }
                             });
                         }
@@ -87,7 +87,7 @@ public class PollingEngine extends AbstractVerticle
 
                             eventBus.<ArrayList>request(Constants.DATABASE_CONSUMER,new JsonObject().put("RequestFrom",Constants.AVAILABILITY_POLLING_PROCESS_TRIGGERED),response->
                             {
-                                if(response.succeeded())
+                                if(response.succeeded() && response.result().body()!=null)
                                 {
                                     vertx.executeBlocking(handlers->
                                     {
@@ -103,10 +103,6 @@ public class PollingEngine extends AbstractVerticle
                                                 if(result.succeeded())
                                                 {
                                                     logger.debug("Fping polling data successfully dumped into database");
-                                                }
-                                                else
-                                                {
-//                                                    logger.debug(response.cause().getMessage()); //exception   chceck
                                                 }
                                             });
 

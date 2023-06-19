@@ -36,17 +36,10 @@ public class DatabaseVerticle extends AbstractVerticle
 
         if(!connectionPool.createConnectionPool())
         {
-            Runtime.getRuntime().addShutdownHook(new Thread()
-            {
-                public void run()
-                {
-                    logger.debug("Shutdown Hook is running !");
+            connectionPool.closeAllConnections();
 
-                    connectionPool.closeAllConnections();
-                }
-            });
+            System.exit(0);
         }
-
     }
 
     EventBus eventBus;
@@ -89,9 +82,9 @@ public class DatabaseVerticle extends AbstractVerticle
                     {
                         loadMonitorData().onComplete(result->
                         {
-                            if(loadMonitorData().succeeded())
+                            if(result.succeeded())
                             {
-                                logger.debug("Monitor Page Loading data "+loadMonitorData().result());
+                                logger.debug("Monitor Page Loading data "+result.result());
 
                                 message.reply(new JsonArray(loadMonitorData().result()));
                             }
@@ -113,9 +106,9 @@ public class DatabaseVerticle extends AbstractVerticle
                     {
                         loadDiscoveryData().onComplete(result->
                         {
-                            if(loadDiscoveryData().succeeded())
+                            if(result.succeeded())
                             {
-                                message.reply(new JsonArray(loadDiscoveryData().result()));
+                                message.reply(new JsonArray(result.result()));
                             }
                             else
                             {
@@ -137,7 +130,7 @@ public class DatabaseVerticle extends AbstractVerticle
 
                         DeleteDevice(deviceId.getString("id")).onComplete(result->
                         {
-                            if(DeleteDevice(deviceId.getString("id")).succeeded())
+                            if(result.succeeded())
                             {
                                 message.reply("Device deleted successfully");
 
@@ -187,52 +180,47 @@ public class DatabaseVerticle extends AbstractVerticle
 
                         fetchDiscoveryDatabyID(deviceId.getString("id")).onComplete(result->
                         {
-                            eventBus.request(Constants.RUN_DISCOVERY_SPAWN_PEROCESS,fetchDiscoveryDatabyID(deviceId.getString("id")).result(),response->
+                            if(result.succeeded())
                             {
-                                if(response.succeeded())
+                                eventBus.request(Constants.RUN_DISCOVERY_SPAWN_PEROCESS,result.result(),response->
                                 {
-                                    if(response.result().body().equals("true"))
+                                    if(response.succeeded())
                                     {
-                                        logger.debug("Device Id of discovery device "+deviceId.getString("id"));
-
-                                        if(updateDiscovery(deviceId.getString("id"),true).succeeded())
+                                        if(response.result().body().equals("true"))
                                         {
-                                            logger.debug("Discovery Table Updated with Provision value");
+                                            logger.debug("Device Id of discovery device "+deviceId.getString("id"));
+
+                                            if(updateDiscovery(deviceId.getString("id"),true).succeeded())
+                                            {
+                                                logger.debug("Discovery Table Updated with Provision value");
+                                            }
+                                            else
+                                            {
+                                                logger.debug("Some Problem in Updating the Provision value");
+                                            }
                                         }
                                         else
                                         {
-                                            logger.debug("Some Problem in Updating the Provision value");
+                                            if(updateDiscovery(deviceId.getString("id"),false).succeeded())
+                                            {
+                                                logger.debug("Discovery Table Updated with Provision value");
+
+                                                message.reply("Device discovered successfully");
+
+                                            }
+                                            else
+                                            {
+                                                message.reply("Device not discovered");
+
+                                                logger.debug("Some Problem in Updating the Provision value");
+                                            }
                                         }
                                     }
                                     else
                                     {
-                                        if(updateDiscovery(deviceId.getString("id"),false).succeeded())
-                                        {
-                                            logger.debug("Discovery Table Updated with Provision value");
-                                        }
-                                        else
-                                        {
-                                            logger.debug("Some Problem in Updating the Provision value");
-                                        }
+                                        logger.debug("Some error in getting the output from .exe file");
                                     }
-                                }
-                                else
-                                {
-                                    logger.debug("Some error in getting the output from .exe file");
-                                }
-                            });
-
-                            if(fetchDiscoveryDatabyID(deviceId.getString("id")).succeeded())
-                            {
-                                message.reply("Device discovered successfully");
-
-                                logger.debug("Device discovered successfully");
-                            }
-                            else
-                            {
-                                message.reply("Device not discovered");
-
-                                logger.debug("Device not discovered");
+                                });
                             }
                         });
                     },false);
@@ -247,21 +235,28 @@ public class DatabaseVerticle extends AbstractVerticle
 
                         fetchDiscoveryDatabyID(deviceId.getString("id")).onComplete(result->
                         {
-                            JsonObject data = result.result();
-
-                            logger.debug("JSON result of RUN PROVISION "+data);
-
-                            provisionedDeviceDataDump(data).onComplete(result1 ->
+                            if(result.succeeded())
                             {
-                                if(result1.succeeded())
+                                JsonObject data = result.result();
+
+                                logger.debug("JSON result of RUN PROVISION "+data);
+
+                                provisionedDeviceDataDump(data).onComplete(result1 ->
                                 {
-                                    logger.debug("Discovery Device Added Succssfullly into Monitor Table");
-                                }
-                                else
-                                {
-                                    logger.debug("Some error occurred in adding discovery device into Monitor Tbale"+result1.cause().getMessage());
-                                }
-                            });
+                                    if(result1.succeeded())
+                                    {
+                                        logger.debug("Discovery Device Added Succssfullly into Monitor Table");
+                                    }
+                                    else
+                                    {
+                                        logger.debug("Some error occurred in adding discovery device into Monitor Tbale"+result1.cause().getMessage());
+                                    }
+                                });
+                            }
+                            else
+                            {
+                                logger.error("Some error occurred in  fetchDiscoveryDatabyID method output");
+                            }
                         });
                     },false);
                     break;
@@ -294,14 +289,12 @@ public class DatabaseVerticle extends AbstractVerticle
 
                         monitorDeviceInfo(deviceId.getString("id")).onComplete(result->
                         {
-                            JsonObject resultInfo  = monitorDeviceInfo(deviceId.getString("id")).result();
+                            JsonObject resultInfo  = result.result();
 
                             logger.debug("Monitor Device information "+resultInfo);
 
-                            if(monitorDeviceInfo(deviceId.getString("id")).succeeded())
-                            {
-                                message.reply(resultInfo);
-                            }
+                            message.reply(resultInfo);
+
                         });
                     },false);
                     break;
@@ -335,9 +328,9 @@ public class DatabaseVerticle extends AbstractVerticle
                     {
                         fetchMonitorData().onComplete(result->
                         {
-                            if(fetchMonitorData().succeeded())
+                            if(result.succeeded())
                             {
-                                JsonArray fetchDataFromMonitorTable = fetchMonitorData().result();
+                                JsonArray fetchDataFromMonitorTable = result.result();
 
                                 logger.debug("SSH polling exe file input data "+fetchDataFromMonitorTable);
 
@@ -360,9 +353,9 @@ public class DatabaseVerticle extends AbstractVerticle
                     {
                         fetchDataForAvailabilityPolling().onComplete(arrayListAsyncResult ->
                         {
-                            if(fetchDataForAvailabilityPolling().succeeded())
+                            if(arrayListAsyncResult.succeeded())
                             {
-                                message.reply(fetchDataForAvailabilityPolling().result());
+                                message.reply(arrayListAsyncResult.result());
                             }
                             else
                             {
@@ -404,17 +397,19 @@ public class DatabaseVerticle extends AbstractVerticle
                 {
                     if(result.succeeded())
                     {
+                        handler.reply("ssh Polling data dumped into database successfully");
+
                         logger.debug("ssh Polling data dumped into database successfully");
                     }
                     else
                     {
-                        logger.debug("Some problem in ssh polling data dumping "+result.cause().getMessage());
+                        handler.reply("ssh Polling data not dumped into database");
+
+                        logger.error("Some problem in ssh polling data dumping "+result.cause().getMessage());
                     }
                 });
             },false);
         });
-
-
 
 
         vertx.setPeriodic(UserConfig.DASHBOARD_REFRESH_DELAY, handler->
@@ -452,7 +447,7 @@ public class DatabaseVerticle extends AbstractVerticle
                 {
                     Operations operations = new Operations(connection);
 
-                    String query = "SELECT m.ipaddress, MAX(p.METRICVALUE) AS memory FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'memory.used.percentage' AND p.timestamp >= NOW() - INTERVAL '1000' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY memory DESC LIMIT 5;";
+                    String query = "SELECT m.ipaddress, MAX(p.METRICVALUE) AS memory FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'memory.used.percentage' AND p.timestamp >= NOW() - INTERVAL '10' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY memory DESC LIMIT 5;";
 
                     List<Map<String, Object>> map = operations.selectQuery(query);
 
@@ -467,7 +462,7 @@ public class DatabaseVerticle extends AbstractVerticle
 
                     logger.debug("Top 5 Memory " + top5MaxMemory);
 
-                    map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS disk FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'disk.used.percentage' AND p.timestamp >= NOW() - INTERVAL '1000' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY disk DESC LIMIT 5;");
+                    map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS disk FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'disk.used.percentage' AND p.timestamp >= NOW() - INTERVAL '10' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY disk DESC LIMIT 5;");
 
                     JsonArray top5MaxDisk = null;
 
@@ -480,7 +475,7 @@ public class DatabaseVerticle extends AbstractVerticle
 
                     logger.debug("Top 5 Memory " + top5MaxDisk);
 
-                    map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS cpu FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'cpu.user.percentage' AND p.timestamp >= NOW() - INTERVAL '1000' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY cpu DESC LIMIT 5;");
+                    map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS cpu FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'cpu.user.percentage' AND p.timestamp >= NOW() - INTERVAL '10' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY cpu DESC LIMIT 5;");
 
                     JsonArray top5MaxCPU = null;
 
@@ -1171,8 +1166,8 @@ public class DatabaseVerticle extends AbstractVerticle
 
                         preparedStatement.addBatch();
                     }
+                    preparedStatement.executeBatch();
                 }
-                preparedStatement.executeBatch();
 
                 promise.complete(true);
             }

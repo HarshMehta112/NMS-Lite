@@ -18,11 +18,11 @@ var monitormain = {
     info : function (event) {
 
 
-        var events = $(event.target);
+        let events = $(event.target);
 
-        var row = events.closest("tr")
+        let row = events.closest("tr")
 
-        var id = row.find("td:nth-child(1)").text();
+        let id = row.find("td:nth-child(1)").text();
 
         console.log(id);
 
@@ -33,11 +33,11 @@ var monitormain = {
 
     deletemonitor: function (event)
     {
-        var events = $(event.target);
+        let events = $(event.target);
 
-        var row = events.closest("tr")
+        let row = events.closest("tr")
 
-        var id = {"id":row.find("td:nth-child(1)").text()};
+        let id = {"id":row.find("td:nth-child(1)").text()};
 
         console.log(id)
 
@@ -84,7 +84,7 @@ var monitorcallback = {
     {
         $("#monitors").dataTable().fnClearTable();
 
-        table = $('#monitors').DataTable({lengthMenu: [10, 20, 50, 100, 200, 500],destroy:true,"bDestroy": true});
+        table = $('#monitors').DataTable({lengthMenu: [10, 20, 50, 100, 200, 500],destroy:true});
 
         monitorhelper.adddata(data);
     },

@@ -1,5 +1,9 @@
 package Database;
 import Utils.Constants;
+import Verticle.DatabaseVerticle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
@@ -7,6 +11,8 @@ import java.util.Properties;
 
 public class PropertiesFile
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(PropertiesFile.class);
 
     static
     {
@@ -24,17 +30,20 @@ public class PropertiesFile
        }
        catch (Exception exception)
        {
-           exception.printStackTrace();
+           logger.error(exception.getCause().getMessage());
        }
        finally
        {
            try
            {
-               fileInputStream.close();
+               if(fileInputStream!=null)
+               {
+                   fileInputStream.close();
+               }
            }
-           catch (IOException e)
+           catch (IOException exception)
            {
-
+               logger.error(exception.getCause().getMessage());
            }
        }
 
@@ -62,7 +71,8 @@ public class PropertiesFile
     }
 
 
-    public static String getPASSWORD() {
+    public static String getPASSWORD()
+    {
         return PASSWORD;
     }
 

@@ -16,29 +16,34 @@ $(function() {
 
             let array = JSON.parse(msg.body)
 
-            array.forEach(function (jsonarray){
-              if(jsonarray[0].hasOwnProperty("MEMORY"))
-              {
-                  dashboardmain.updateTableData(jsonarray,"MEMORY","memory")
-              }
-              else if(jsonarray[0].hasOwnProperty("DISK"))
-              {
-                  dashboardmain.updateTableData(jsonarray,"DISK","disk")
-              }
-              else if(jsonarray[0].hasOwnProperty("CPU"))
-              {
-                  dashboardmain.updateTableData(jsonarray,"CPU","cpu")
-              }
-              else if(jsonarray[0].hasOwnProperty("UP"))
-              {
-                  console.log(jsonarray[0]["UP"]);
+            array.forEach(function (jsonarray)
+            {
+                if(jsonarray && jsonarray.length>0)
+                {
+                    if(jsonarray[0].hasOwnProperty("UP"))
+                    {
+                        console.log(jsonarray[0]["UP"]);
 
-                  $("#up").html(jsonarray[0]["UP"]);
+                        $("#up").html(jsonarray[0]["UP"]);
 
-                  $("#down").html(jsonarray[0]["DOWN"]);
+                        $("#down").html(jsonarray[0]["DOWN"]);
 
-                  $("#total").html(jsonarray[0]["UP"] + jsonarray[0]["DOWN"]);
-              }
+                        $("#total").html(jsonarray[0]["UP"] + jsonarray[0]["DOWN"]);
+                    }
+
+                    else if(jsonarray[0].hasOwnProperty("MEMORY"))
+                    {
+                        dashboardmain.updateTableData(jsonarray,"MEMORY","memory")
+                    }
+                    else if(jsonarray[0].hasOwnProperty("DISK"))
+                    {
+                        dashboardmain.updateTableData(jsonarray,"DISK","disk")
+                    }
+                    else if(jsonarray[0].hasOwnProperty("CPU"))
+                    {
+                        dashboardmain.updateTableData(jsonarray,"CPU","cpu")
+                    }
+                }
 
             })
 
@@ -70,8 +75,15 @@ var dashboardmain = {
     {
         let request = {
             url: "dashboard"
+
         }
-        genericAjaxCall.ajaxpost(request);
+
+        setTimeout(function ()
+        {
+           genericAjaxCall.ajaxpost(request)
+
+        },1000);
+
     }
 
 };
