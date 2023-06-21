@@ -6,7 +6,6 @@ import Utils.UserConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -64,13 +63,16 @@ public class PollingEngine extends AbstractVerticle
 
                                         eventBus.<JsonNode>request(Constants.OUTPUT_SSH_POLLING,outputFromPlugin,result->
                                         {
-                                            if(result.succeeded())
+                                            if(outputFromPlugin!=null)
                                             {
-                                                logger.debug("Polling Data Dumped into the Database");
-                                            }
-                                            else
-                                            {
-                                                logger.error("Some error in dumping the ssh polling data into Database");
+                                                if(result.succeeded())
+                                                {
+                                                    logger.debug("Polling Data Dumped into the Database");
+                                                }
+                                                else
+                                                {
+                                                    logger.error("Some error in dumping the ssh polling data into Database");
+                                                }
                                             }
                                         });
                                     });

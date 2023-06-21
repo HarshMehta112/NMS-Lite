@@ -38,7 +38,7 @@ public class SpawnProcess
 
         BufferedReader reader = null;
 
-        Process process = null;
+        Process process ;
 
         logger.debug("Fping command for checking availability of device " + command);
 
@@ -71,7 +71,7 @@ public class SpawnProcess
                 {
                     fpingResult.put(((line.split(":"))[0]).trim(), "Down");
                 }
-                process.waitFor(60, TimeUnit.SECONDS);
+
             }
         }
         catch (Exception exception)
@@ -85,11 +85,6 @@ public class SpawnProcess
                if(reader!=null)
                {
                    reader.close();
-               }
-
-               if(process!=null)
-               {
-                   process.destroy();
                }
            }
            catch (Exception exception)
@@ -107,11 +102,9 @@ public class SpawnProcess
 
         String encoder = (Base64.getEncoder().encodeToString((credential).toString().getBytes(StandardCharsets.UTF_8)));
 
-        logger.debug("Encoded String "+ encoder);
-
         BufferedReader reader = null;
 
-        Process process = null;
+        Process process;
 
         JsonArray resultJsonarray = new JsonArray();
 
@@ -129,20 +122,34 @@ public class SpawnProcess
 
             while ((line = reader.readLine()) != null)
             {
-                JsonArray jsonArray = new JsonArray(line);
+                JsonArray jsonArray = null;
 
-                resultJsonarray.addAll(jsonArray);
+                try
+                {
+                    jsonArray = new JsonArray(line);
+                }
+                catch (io.vertx.core.json.DecodeException exception)
+                {
+                    logger.error(line);
+                }
+               if(jsonArray!=null)
+               {
+                   resultJsonarray.addAll(jsonArray);
+               }
             }
             array = mapper.readTree(resultJsonarray.toString());
 
-            process.waitFor(60,TimeUnit.SECONDS);
+            if(process.waitFor(60, TimeUnit.SECONDS))
+            {
+                process.destroy();
+            }
 
             logger.debug("Output from golang exe Plugin "+resultJsonarray);
 
         }
         catch (Exception exception)
         {
-            exception.printStackTrace();
+            logger.error(exception.getCause().getMessage());
         }
         finally
         {
@@ -153,18 +160,12 @@ public class SpawnProcess
                    reader.close();
                }
 
-               if(process!=null)
-               {
-                   process.destroy();
-               }
            }
            catch (Exception exception)
            {
                logger.error(exception.getCause().getMessage());
            }
-
         }
-
         return array;
     }
 

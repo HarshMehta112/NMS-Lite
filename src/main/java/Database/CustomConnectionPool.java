@@ -1,6 +1,5 @@
 package Database;
 
-import Utils.SpawnProcess;
 import Utils.UserConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 
 
@@ -24,8 +22,6 @@ public class CustomConnectionPool
     private static String PASSWORD ;
 
     private static ArrayBlockingQueue< Connection > connectionPool;
-
-    private static ArrayList< Connection > activeConnection = new ArrayList<>();
 
     private final int INITIALPOLLSIZE = UserConfig.MIN_CONNECTION_POOL_SIZE;
 
@@ -52,20 +48,17 @@ public class CustomConnectionPool
 
     public void setURL (String URL)
     {
-
-        this.URL = URL;
+        CustomConnectionPool.URL = URL;
     }
 
     public void setUser (String USER)
     {
-
-        this.USER = USER;
+        CustomConnectionPool.USER = USER;
     }
 
     public void setPassword (String password)
     {
-
-        this.PASSWORD = PASSWORD;
+        CustomConnectionPool.PASSWORD = password;
     }
 
     public boolean createConnectionPool ()
@@ -91,7 +84,6 @@ public class CustomConnectionPool
                 }
             }
         }
-
         return true;
     }
 
@@ -100,20 +92,14 @@ public class CustomConnectionPool
 
         Connection connection = connectionPool.remove();
 
-        activeConnection.add(connection);
-
         return connection;
     }
 
     public void releaseConnection (Connection connection)
     {
-
         try
         {
             connectionPool.put(connection);
-
-            activeConnection.remove(connection);
-
         }
         catch ( InterruptedException exception )
         {
@@ -124,13 +110,13 @@ public class CustomConnectionPool
 
     public void closeAllConnections()
     {
-        int size = activeConnection.size();
+        int size = connectionPool.size();
 
         for(int index=0;index<size;index++)
         {
             try
             {
-                activeConnection.get(index).close();
+                connectionPool.take().close();
             }
             catch ( Exception exception )
             {

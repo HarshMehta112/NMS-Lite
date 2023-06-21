@@ -24,8 +24,11 @@ public class DatabaseVerticle extends AbstractVerticle
 
     static CustomConnectionPool connectionPool;
 
-    static
+    EventBus eventBus;
+    @Override
+    public void start(Promise<Void> startPromise)
     {
+
         connectionPool = CustomConnectionPool.getInstance();
 
         connectionPool.setURL(PropertiesFile.getURL());
@@ -36,16 +39,11 @@ public class DatabaseVerticle extends AbstractVerticle
 
         if(!connectionPool.createConnectionPool())
         {
+            startPromise.fail("Error in creating connection pool");
+
             connectionPool.closeAllConnections();
-
-            System.exit(0);
         }
-    }
 
-    EventBus eventBus;
-    @Override
-    public void start(Promise<Void> startPromise)
-    {
         eventBus = vertx.eventBus();
 
         eventBus.localConsumer(Constants.DATABASE_CONSUMER).handler(message->
@@ -431,8 +429,6 @@ public class DatabaseVerticle extends AbstractVerticle
 
     }
 
-
-
     private void dashBoardDataLoad(Promise <List<JsonArray>> promise)
     {
         List<JsonArray> dashBoardData = new ArrayList<>();
@@ -447,7 +443,7 @@ public class DatabaseVerticle extends AbstractVerticle
                 {
                     Operations operations = new Operations(connection);
 
-                    String query = "SELECT m.ipaddress, MAX(p.METRICVALUE) AS memory FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'memory.used.percentage' AND p.timestamp >= NOW() - INTERVAL '10' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY memory DESC LIMIT 5;";
+                    String query = "SELECT m.ipaddress, MAX(p.METRICVALUE) AS memory FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'memory.used.percentage' AND p.timestamp >= NOW() - INTERVAL '5' MINUTE AND p.deviceid = m.deviceid GROUP BY p.deviceid ORDER BY memory DESC LIMIT 5;";
 
                     List<Map<String, Object>> map = operations.selectQuery(query);
 
@@ -462,7 +458,7 @@ public class DatabaseVerticle extends AbstractVerticle
 
                     logger.debug("Top 5 Memory " + top5MaxMemory);
 
-                    map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS disk FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'disk.used.percentage' AND p.timestamp >= NOW() - INTERVAL '10' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY disk DESC LIMIT 5;");
+                    map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS disk FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'disk.used.percentage' AND p.timestamp >= NOW() - INTERVAL '5' MINUTE AND p.deviceid = m.deviceid GROUP BY p.deviceid ORDER BY disk DESC LIMIT 5;");
 
                     JsonArray top5MaxDisk = null;
 
@@ -475,7 +471,7 @@ public class DatabaseVerticle extends AbstractVerticle
 
                     logger.debug("Top 5 Memory " + top5MaxDisk);
 
-                    map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS cpu FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'cpu.user.percentage' AND p.timestamp >= NOW() - INTERVAL '10' MINUTE AND p.IPADDRESS = m.IPADDRESS GROUP BY p.ipaddress ORDER BY cpu DESC LIMIT 5;");
+                    map = operations.selectQuery("SELECT m.ipaddress, MAX(p.METRICVALUE) AS cpu FROM POLLING_TABLE p, MONITOR_TABLE m WHERE p.metricType = 'cpu.user.percentage' AND p.timestamp >= NOW() - INTERVAL '5' MINUTE AND p.deviceid = m.deviceid GROUP BY p.deviceid ORDER BY cpu DESC LIMIT 5;");
 
                     JsonArray top5MaxCPU = null;
 
@@ -488,7 +484,7 @@ public class DatabaseVerticle extends AbstractVerticle
 
                     logger.debug("Top 5 CPU " + top5MaxCPU);
 
-                    map = operations.selectQuery("SELECT COUNT(CASE WHEN STATUS='Up' THEN 1 END) as UP,COUNT(CASE WHEN STATUS='Down' THEN 1 END) as DOWN FROM (SELECT MONITOR_TABLE.DEVICEID, MONITOR_TABLE.IPADDRESS, MONITOR_TABLE.TYPE,MONITOR_TABLE.NAME, AVAILABILITY_TABLE.STATUS FROM MONITOR_TABLE INNER JOIN AVAILABILITY_TABLE ON MONITOR_TABLE.IPADDRESS = AVAILABILITY_TABLE.IPADDRESS ORDER BY AVAILABILITY_TABLE.TIMESTAMP DESC lIMIT (SELECT COUNT(IPADDRESS) FROM MONITOR_TABLE))");
+                    map = operations.selectQuery("SELECT COUNT(*) FILTER (WHERE STATUS = 'Up') AS UP, COUNT(*) FILTER (WHERE STATUS = 'Down') AS DOWN, COUNT(*) FILTER (WHERE STATUS = 'Unknown') AS UNKNOWNS, COUNT(*) AS TOTAL FROM MONITOR_TABLE;");
 
                     JsonArray status ;
 
@@ -520,6 +516,8 @@ public class DatabaseVerticle extends AbstractVerticle
         });
 
     }
+
+
 
 
     private Future<Boolean> DeleteDevice(String deviceID)
@@ -736,6 +734,10 @@ public class DatabaseVerticle extends AbstractVerticle
         return promise.future();
     }
 
+
+
+
+
     private Future<JsonObject> monitorDeviceInfo(String deviceId)
     {
         Promise<JsonObject> promise = Promise.promise();
@@ -769,6 +771,7 @@ public class DatabaseVerticle extends AbstractVerticle
                         result.put(metaData.getColumnName(iterator), resultSet.getObject(iterator));
                     }
                 }
+
                 promise.complete(result);
             }
             else
@@ -784,7 +787,6 @@ public class DatabaseVerticle extends AbstractVerticle
         {
             connectionPool.releaseConnection(connection);
         }
-
         logger.debug("Result form device info "+result);
 
         return promise.future();
@@ -1152,21 +1154,24 @@ public class DatabaseVerticle extends AbstractVerticle
 
                 for (JsonNode jsonObject : jsonArray)
                 {
-                    for (String dataName: insertData)
-                    {
-                        preparedStatement.setObject(1, jsonObject.get("id").asText());
+                   if(jsonObject!=null)
+                   {
+                       for (String dataName: insertData)
+                       {
+                           preparedStatement.setObject(1, jsonObject.get("id").asText());
 
-                        preparedStatement.setObject(2,jsonObject.get("ip").asText());
+                           preparedStatement.setObject(2,jsonObject.get("ip").asText());
 
-                        preparedStatement.setObject(3,dataName);
+                           preparedStatement.setObject(3,dataName);
 
-                        preparedStatement.setObject(4,jsonObject.get(dataName).asText());
+                           preparedStatement.setObject(4,jsonObject.get(dataName).asText());
 
-                        preparedStatement.setObject(5,jsonObject.get("timestamp").asText());
+                           preparedStatement.setObject(5,jsonObject.get("timestamp").asText());
 
-                        preparedStatement.addBatch();
-                    }
-                    preparedStatement.executeBatch();
+                           preparedStatement.addBatch();
+                       }
+                       preparedStatement.executeBatch();
+                   }
                 }
 
                 promise.complete(true);

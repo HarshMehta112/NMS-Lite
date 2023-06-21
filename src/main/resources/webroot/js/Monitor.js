@@ -74,8 +74,6 @@ var monitorhelper = {
         });
     },
 
-
-
 };
 
 var monitorcallback = {

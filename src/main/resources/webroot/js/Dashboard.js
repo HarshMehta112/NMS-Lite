@@ -6,7 +6,7 @@ $(document).ready(function() {
 
 $(function() {
 
-    var eventBus = new EventBus('/login/eventbus');
+    let eventBus = new EventBus('/login/eventbus');
 
     eventBus.onopen = function () {
 
@@ -22,13 +22,13 @@ $(function() {
                 {
                     if(jsonarray[0].hasOwnProperty("UP"))
                     {
-                        console.log(jsonarray[0]["UP"]);
-
                         $("#up").html(jsonarray[0]["UP"]);
 
                         $("#down").html(jsonarray[0]["DOWN"]);
 
-                        $("#total").html(jsonarray[0]["UP"] + jsonarray[0]["DOWN"]);
+                        $("#total").html(jsonarray[0]["TOTAL"]);
+
+                        $("#unknown").html(jsonarray[0]["UNKNOWNS"])
                     }
 
                     else if(jsonarray[0].hasOwnProperty("MEMORY"))
@@ -57,12 +57,12 @@ var dashboardmain = {
     {
         $("#"+table).dataTable().fnClearTable();
 
-        console.log(metricType)
-
         let dataTable = $("#"+table).DataTable({
+
             searching: false, paging: false, info: false,destroy:true,
 
             data: data,
+
             columns: [
                 {data: 'IPADDRESS'},
                 {targets:1 , data: metricType}
@@ -74,6 +74,7 @@ var dashboardmain = {
     onload : function ()
     {
         let request = {
+
             url: "dashboard"
 
         }

@@ -1,4 +1,7 @@
-$(function (){discoverymain.onload()})
+$(function (){
+    discoverymain.onload()
+})
+
 var discoverymain = {
 
     onload: function ()
@@ -167,8 +170,6 @@ var discoveryhelper = {
 
     adddata: function (data)
     {
-        console.log(data)
-
         $.each(JSON.parse(data), function (key,value)
         {
             if(value.PROVISION === false)
@@ -266,6 +267,7 @@ var discoverycallback = {
     onload: function (data)
     {
         $("#monitors").dataTable().fnClearTable();
+
         table = $('#monitors').DataTable({lengthMenu: [10, 20, 50, 100, 200, 500],destroy:true});
 
         discoveryhelper.adddata(data, table);
@@ -275,11 +277,9 @@ var discoverycallback = {
     {
         $("#myModalUpdate").show();
 
-        var a = $(event.target);
+        let events = $(event.target);
 
-        console.log(a)
-
-        let row = a.closest("tr")
+        let row = events.closest("tr")
 
         let beforeEditid = row.find("td:nth-child(1)").text();
 
