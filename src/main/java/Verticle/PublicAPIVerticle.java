@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 public class PublicAPIVerticle extends AbstractVerticle
 {
-
     private static final Logger logger = LoggerFactory.getLogger(PublicAPIVerticle.class);
 
     EventBus eventBus;
@@ -267,6 +266,8 @@ public class PublicAPIVerticle extends AbstractVerticle
                     });
 
             startPromise.complete();
+
+            logger.info("Public API verticle deployed successfully");
         }
         catch (Exception exception)
         {

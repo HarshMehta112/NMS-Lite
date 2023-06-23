@@ -193,3 +193,19 @@ button:hover {
 #bar {
     margin: 10px;
 }
+
+.grid-container {
+    display: grid;
+    column-gap: 50px;
+    row-gap: 50px;
+}
+
+.table .table-header{
+    background:#FEC107;
+    color:#333;
+}
+.table .table-header .cell{
+    overflow-x: auto;
+    display: grid;
+    padding:20px 5px;
+}

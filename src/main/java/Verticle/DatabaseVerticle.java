@@ -24,11 +24,10 @@ public class DatabaseVerticle extends AbstractVerticle
 
     static CustomConnectionPool connectionPool;
 
-    EventBus eventBus;
-    @Override
-    public void start(Promise<Void> startPromise)
-    {
+    private static final boolean poolCreationFlag;
 
+    static
+    {
         connectionPool = CustomConnectionPool.getInstance();
 
         connectionPool.setURL(PropertiesFile.getURL());
@@ -37,11 +36,18 @@ public class DatabaseVerticle extends AbstractVerticle
 
         connectionPool.setPassword(PropertiesFile.getPASSWORD());
 
-        if(!connectionPool.createConnectionPool())
-        {
-            startPromise.fail("Error in creating connection pool");
+        poolCreationFlag  = connectionPool.createConnectionPool();
+    }
 
+    EventBus eventBus;
+    @Override
+    public void start(Promise<Void> startPromise)
+    {
+        if(!poolCreationFlag)
+        {
             connectionPool.closeAllConnections();
+
+            startPromise.fail("ConnectionPool not created .......");
         }
 
         eventBus = vertx.eventBus();
@@ -427,6 +433,8 @@ public class DatabaseVerticle extends AbstractVerticle
 
         startPromise.complete();
 
+        logger.info("Database verticle deployed successfully");
+
     }
 
     private void dashBoardDataLoad(Promise <List<JsonArray>> promise)
@@ -516,7 +524,6 @@ public class DatabaseVerticle extends AbstractVerticle
         });
 
     }
-
 
 
 
@@ -734,6 +741,175 @@ public class DatabaseVerticle extends AbstractVerticle
         return promise.future();
     }
 
+    private float calculateRate(String previousBytes,String currentBytes,String previousUptime,String currentUptime)
+    {
+        float rateInBPS = 0;
+       try {
+           long prevBytes =  Long.parseLong(previousBytes);
+
+           long currBytes =  Long.parseLong(currentBytes);
+
+           float prevUptime = Float.parseFloat(previousUptime);
+
+           float currUptime = Float.parseFloat(currentUptime);
+
+           long numerator;
+
+           float denominator;
+
+           if((prevBytes>currBytes) || (prevUptime>currUptime))
+           {
+               numerator = currBytes;
+
+               denominator = currUptime;
+           }
+           else
+           {
+               numerator = (currBytes-prevBytes);
+
+               denominator = (currUptime-prevUptime);
+           }
+
+           rateInBPS = ((float) numerator /denominator);
+       }
+       catch (Exception exception)
+       {
+           exception.printStackTrace();
+       }
+
+        return rateInBPS;
+
+    }
+
+
+    private Future<Void> interfaceInfo(String deviceId, JsonObject interfaceResult)
+    {
+        Promise<Void> promise = Promise.promise();
+
+        JsonObject lastPollData = new JsonObject();
+
+        Connection connection = connectionPool.getConnection();
+
+        String query = "SELECT MAX( CASE WHEN METRICTYPE = 'wl.name' THEN METRICVALUE END ) AS \"wl.name\", MAX( CASE WHEN METRICTYPE = 'wl.RX.bytes' THEN METRICVALUE END ) AS \"wl.RX.bytes\", MAX( CASE WHEN METRICTYPE = 'uptime' THEN METRICVALUE END ) AS \"uptime\", MAX( CASE WHEN METRICTYPE = 'wl.TX.bytes' THEN METRICVALUE END ) AS \"wl.TX.bytes\", MAX( CASE WHEN METRICTYPE = 'en.TX.bytes' THEN METRICVALUE END ) AS \"en.TX.bytes\", MAX( CASE WHEN METRICTYPE = 'en.RX.bytes' THEN METRICVALUE END ) AS \"en.RX.bytes\", MAX( CASE WHEN METRICTYPE = 'en.name' THEN METRICVALUE END ) AS \"en.name\", MAX( CASE WHEN METRICTYPE = 'lo.TX.bytes' THEN METRICVALUE END ) AS \"lo.TX.bytes\", MAX( CASE WHEN METRICTYPE = 'lo.RX.bytes' THEN METRICVALUE END ) AS \"lo.RX.bytes\", MAX( CASE WHEN METRICTYPE = 'lo.name' THEN METRICVALUE END ) AS \"lo.name\" FROM POLLING_TABLE WHERE DEVICEID = ? AND METRICTYPE IN ( 'wl.name', 'wl.TX.bytes', 'wl.RX.bytes', 'lo.name', 'lo.TX.bytes', 'lo.RX.bytes', 'en.name', 'en.TX.bytes', 'en.RX.bytes', 'uptime' ) AND TIMESTAMP = ( SELECT MAX(TIMESTAMP) FROM POLLING_TABLE WHERE DEVICEID = ? )";
+
+        try ( PreparedStatement statement = connection.prepareStatement(query) )
+        {
+            if(!(connection.isClosed()))
+            {
+                statement.setObject(1,Integer.valueOf(deviceId));
+
+                statement.setObject(2,Integer.valueOf(deviceId));
+
+                ResultSet resultSet = statement.executeQuery();
+
+                ResultSetMetaData metaData = resultSet.getMetaData();
+
+                int columnCount = metaData.getColumnCount();
+
+                while ( resultSet.next() )
+                {
+                    for ( int iterator = 1; iterator <= columnCount; iterator++ )
+                    {
+                        lastPollData.put(metaData.getColumnName(iterator), resultSet.getObject(iterator));
+                    }
+                }
+
+                logger.debug("last Poll Data "+lastPollData);
+            }
+            else
+            {
+                promise.fail("monitorDeviceInfo method rpomise failed due to connection failed");
+            }
+        }
+        catch (Exception exception)
+        {
+            logger.error(exception.getCause().getMessage());
+        }
+
+        JsonObject secondLastPollData = new JsonObject();
+
+        String query2 = "SELECT MAX( CASE WHEN METRICTYPE = 'wl.name' THEN METRICVALUE END ) AS \"wl.name\", MAX( CASE WHEN METRICTYPE = 'wl.RX.bytes' THEN METRICVALUE END ) AS \"wl.RX.bytes\", MAX( CASE WHEN METRICTYPE = 'uptime' THEN METRICVALUE END ) AS \"uptime\", MAX( CASE WHEN METRICTYPE = 'wl.TX.bytes' THEN METRICVALUE END ) AS \"wl.TX.bytes\", MAX( CASE WHEN METRICTYPE = 'en.TX.bytes' THEN METRICVALUE END ) AS \"en.TX.bytes\", MAX( CASE WHEN METRICTYPE = 'en.RX.bytes' THEN METRICVALUE END ) AS \"en.RX.bytes\", MAX( CASE WHEN METRICTYPE = 'en.name' THEN METRICVALUE END ) AS \"en.name\", MAX( CASE WHEN METRICTYPE = 'lo.TX.bytes' THEN METRICVALUE END ) AS \"lo.TX.bytes\", MAX( CASE WHEN METRICTYPE = 'lo.RX.bytes' THEN METRICVALUE END ) AS \"lo.RX.bytes\", MAX( CASE WHEN METRICTYPE = 'lo.name' THEN METRICVALUE END ) AS \"lo.name\" FROM POLLING_TABLE WHERE DEVICEID = ? AND METRICTYPE IN ( 'wl.name', 'wl.TX.bytes', 'wl.RX.bytes', 'lo.name', 'lo.TX.bytes', 'lo.RX.bytes', 'en.name', 'en.TX.bytes', 'en.RX.bytes', 'uptime' ) AND TIMESTAMP = ( SELECT MAX(TIMESTAMP) FROM POLLING_TABLE WHERE DEVICEID = ? AND TIMESTAMP < ( SELECT MAX(TIMESTAMP) FROM POLLING_TABLE WHERE DEVICEID = ? ) )";
+
+        try ( PreparedStatement statement = connection.prepareStatement(query2) )
+        {
+            if(!(connection.isClosed()))
+            {
+                statement.setObject(1,Integer.valueOf(deviceId));
+
+                statement.setObject(2,Integer.valueOf(deviceId));
+
+                statement.setObject(3,Integer.valueOf(deviceId));
+
+                ResultSet resultSet = statement.executeQuery();
+
+                ResultSetMetaData metaData = resultSet.getMetaData();
+
+                int columnCount = metaData.getColumnCount();
+
+                while ( resultSet.next() )
+                {
+                    for ( int iterator = 1; iterator <= columnCount; iterator++ )
+                    {
+                        secondLastPollData.put(metaData.getColumnName(iterator), resultSet.getObject(iterator));
+                    }
+                }
+
+                logger.debug("Second last Poll data "+secondLastPollData);
+
+                float wlTxRate = calculateRate(lastPollData.getString("wl.TX.bytes"),secondLastPollData.getString("wl.TX.bytes"),lastPollData.getString("uptime"),secondLastPollData.getString("uptime"));
+
+                float wlRxRate = calculateRate(lastPollData.getString("wl.RX.bytes"),secondLastPollData.getString("wl.RX.bytes"),lastPollData.getString("uptime"),secondLastPollData.getString("uptime"));
+
+                float enTxRate = calculateRate(lastPollData.getString("en.TX.bytes"),secondLastPollData.getString("en.TX.bytes"),lastPollData.getString("uptime"),secondLastPollData.getString("uptime"));
+
+                float enRxRate = calculateRate(lastPollData.getString("en.RX.bytes"),secondLastPollData.getString("en.RX.bytes"),lastPollData.getString("uptime"),secondLastPollData.getString("uptime"));
+
+                float loTxRate = calculateRate(lastPollData.getString("lo.TX.bytes"),secondLastPollData.getString("lo.TX.bytes"),lastPollData.getString("uptime"),secondLastPollData.getString("uptime"));
+
+                float loRxRate = calculateRate(lastPollData.getString("lo.RX.bytes"),secondLastPollData.getString("lo.RX.bytes"),lastPollData.getString("uptime"),secondLastPollData.getString("uptime"));
+
+                interfaceResult.put("wl.name",secondLastPollData.getValue("wl.name"));
+
+                interfaceResult.put("en.name",secondLastPollData.getValue("en.name"));
+
+                interfaceResult.put("lo.name",secondLastPollData.getValue("lo.name"));
+
+                interfaceResult.put("wlTxRate",wlTxRate);
+
+                interfaceResult.put("wlRxRate",wlRxRate);
+
+                interfaceResult.put("enTxRate",enTxRate);
+
+                interfaceResult.put("enRxRate",enRxRate);
+
+                interfaceResult.put("loTxRate",loTxRate);
+
+                interfaceResult.put("loRxRate",loRxRate);
+
+                interfaceResult.put("loTotalRate",loRxRate+loTxRate);
+
+                interfaceResult.put("enTotalRate",enTxRate+enRxRate);
+
+                interfaceResult.put("wlTotalRate",wlTxRate+wlRxRate);
+
+                promise.complete();
+            }
+            else
+            {
+                promise.fail("monitorDeviceInfo method promise failed due to connection failed");
+            }
+        }
+        catch (Exception exception)
+        {
+            logger.error(exception.getCause().getMessage());
+        }
+
+        finally
+        {
+            connectionPool.releaseConnection(connection);
+        }
+        return null;
+    }
 
 
 
@@ -746,7 +922,9 @@ public class DatabaseVerticle extends AbstractVerticle
 
         Connection connection = connectionPool.getConnection();
 
-        String query = "SELECT MAX(CASE WHEN P.METRICTYPE = 'cpu.user.percentage' THEN P.METRICVALUE END) AS \"cpu.user.percentage\",MAX(CASE WHEN P.METRICTYPE = 'system.name' THEN P.METRICVALUE END) AS \"system.name\",MAX(CASE WHEN P.METRICTYPE = 'uptime' THEN P.METRICVALUE END) AS \"uptime\",MAX(CASE WHEN P.METRICTYPE = 'disk.used.percentage' THEN P.METRICVALUE END) AS \"disk.used.percentage\",MAX(CASE WHEN P.METRICTYPE = 'memory.used.percentage' THEN P.METRICVALUE END) AS \"memory.used.percentage\" FROM POLLING_TABLE P WHERE P.DEVICEID = ? AND P.METRICTYPE IN ('cpu.user.percentage', 'system.name', 'uptime', 'disk.used.percentage', 'memory.used.percentage') AND P.TIMESTAMP = (SELECT MAX(TIMESTAMP) FROM POLLING_TABLE WHERE DEVICEID = ? AND METRICTYPE = P.METRICTYPE);";
+        interfaceInfo(deviceId,result);
+
+        String query = "SELECT MAX( CASE WHEN METRICTYPE = 'cpu.user.percentage' THEN METRICVALUE END ) AS \"cpu.user.percentage\", MAX( CASE WHEN METRICTYPE = 'system.name' THEN METRICVALUE END ) AS \"system.name\", MAX( CASE WHEN METRICTYPE = 'uptime' THEN METRICVALUE END ) AS \"uptime\", MAX( CASE WHEN METRICTYPE = 'disk.used.percentage' THEN METRICVALUE END ) AS \"disk.used.percentage\", MAX( CASE WHEN METRICTYPE = 'memory.used.percentage' THEN METRICVALUE END ) AS \"memory.used.percentage\" FROM POLLING_TABLE WHERE DEVICEID = ? AND METRICTYPE IN ( 'cpu.user.percentage', 'system.name', 'uptime', 'disk.used.percentage', 'memory.used.percentage' ) AND TIMESTAMP = ( SELECT MAX(TIMESTAMP) FROM POLLING_TABLE WHERE DEVICEID = ? );";
 
         try ( PreparedStatement statement = connection.prepareStatement(query) )
         {
@@ -1142,7 +1320,7 @@ public class DatabaseVerticle extends AbstractVerticle
 
         Connection connection = connectionPool.getConnection();
 
-        String[] insertData = new String[]{"cpu.idle.percentage","cpu.system.percentage","cpu.user.percentage","disk.used.percentage","memory.free.percentage","memory.used.percentage","operating.system.name","operating.system.version","system.name","uptime"};
+        String[] insertData = new String[]{"lo.name","lo.RX.bytes","lo.TX.bytes","en.name","en.RX.bytes","en.TX.bytes","wl.name","wl.RX.bytes","wl.TX.bytes","cpu.idle.percentage","cpu.system.percentage","cpu.user.percentage","disk.used.percentage","memory.free.percentage","memory.used.percentage","operating.system.name","operating.system.version","system.name","uptime"};
 
         try(PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO POLLING_TABLE VALUES(?,?,?,?,?)"))
         {

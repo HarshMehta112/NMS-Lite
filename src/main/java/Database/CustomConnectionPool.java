@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.concurrent.ArrayBlockingQueue;
 
 
@@ -66,7 +65,7 @@ public class CustomConnectionPool
 
         if ( poolSize < MAXPOOLSIZE )
         {
-            connectionPool = new ArrayBlockingQueue<>(poolSize);
+            connectionPool = new ArrayBlockingQueue<>(poolSize,true);
 
             for ( int index = 0; index < poolSize; index++ )
             {
@@ -76,7 +75,7 @@ public class CustomConnectionPool
 
                     connectionPool.add(connection);
                 }
-                catch ( SQLException exception )
+                catch ( Exception exception )
                 {
                     logger.error(exception.getCause().getMessage());
 
